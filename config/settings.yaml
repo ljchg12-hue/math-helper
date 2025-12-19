@@ -1,0 +1,36 @@
+# Math Helper 설정 파일
+
+app:
+  title: "중학교 1학년 수학 학습 도우미"
+  layout: "wide"
+  initial_sidebar_state: "expanded"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+ui:
+  theme:
+    primary_color: "#1f77b4"
+    background_color: "#ffffff"
+    secondary_background_color: "#f0f2f6"
+    text_color: "#262730"
+
+calculators:
+  prime_factor:
+    min_value: 2
+    max_value: 1000000
+    default_value: 12
+
+  linear_equation:
+    default_a: 2.0
+    default_b: 3.0
+    default_c: 7.0
+
+  function_graph:
+    default_a: 1.0
+    x_range_min: -10
+    x_range_max: 10
+    x_range_default: [-5, 5]
+    y_limit: 10
+    grid_alpha: 0.6
