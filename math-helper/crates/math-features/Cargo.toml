@@ -1,0 +1,36 @@
+[package]
+name = "math-features"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Core math library
+math-core = { path = "../math-core" }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+csv = { workspace = true }
+
+# Date and time
+chrono = { workspace = true }
+
+# Random numbers for practice problem generation
+rand = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Logging
+log = { workspace = true }
+
+# File paths
+dirs = { workspace = true }
+
+[dev-dependencies]
+# Testing
+proptest = { workspace = true }

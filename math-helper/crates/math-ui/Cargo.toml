@@ -1,0 +1,45 @@
+[package]
+name = "math-ui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Core libraries
+math-core = { path = "../math-core" }
+math-features = { path = "../math-features" }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+
+# Logging
+log = { workspace = true }
+
+# UI Framework - Choose one when ready to implement
+# Option 1: egui (immediate mode GUI)
+# egui = { version = "0.24", optional = true }
+# eframe = { version = "0.24", optional = true }
+
+# Option 2: iced (Elm-inspired)
+# iced = { version = "0.12", optional = true }
+
+# Option 3: Web backend with Tauri
+# tauri = { version = "1.5", optional = true }
+
+# Plotting - uncomment when needed
+# plotters = "0.3"
+# egui_plot = { version = "0.24", optional = true }
+
+[features]
+default = []
+# Uncomment when choosing UI framework
+# egui = ["dep:egui", "dep:eframe"]
+# iced = ["dep:iced"]
+# tauri = ["dep:tauri"]
+# plots = ["plotters"]

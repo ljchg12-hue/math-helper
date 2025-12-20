@@ -1,0 +1,288 @@
+warning: constant `EPSILON` is never used
+  --> crates/math-core/src/statistics.rs:11:7
+   |
+11 | const EPSILON: f64 = 1e-10;
+   |       ^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: `math-core` (lib) generated 1 warning
+    Finished `bench` profile [optimized] target(s) in 0.04s
+     Running unittests src/lib.rs (target/release/deps/math_core-e20b1a87dc5b84c0)
+
+running 50 tests
+test geometry::tests::test_circle_area ... ignored
+test geometry::tests::test_circle_area_function ... ignored
+test geometry::tests::test_circle_circumference ... ignored
+test geometry::tests::test_circle_invalid_radius ... ignored
+test geometry::tests::test_invalid_input_nan ... ignored
+test geometry::tests::test_invalid_input_negative ... ignored
+test geometry::tests::test_point_distance ... ignored
+test geometry::tests::test_point_midpoint ... ignored
+test geometry::tests::test_pythagorean_theorem_a ... ignored
+test geometry::tests::test_pythagorean_theorem_c ... ignored
+test geometry::tests::test_trapezoid_area_function ... ignored
+test geometry::tests::test_triangle_area ... ignored
+test geometry::tests::test_triangle_area_function ... ignored
+test geometry::tests::test_triangle_collinear ... ignored
+test geometry::tests::test_triangle_perimeter ... ignored
+test linear_equation::tests::test_basic ... ignored
+test linear_equation::tests::test_fractional_solution ... ignored
+test linear_equation::tests::test_infinity_input ... ignored
+test linear_equation::tests::test_nan_input_a ... ignored
+test linear_equation::tests::test_nan_input_b ... ignored
+test linear_equation::tests::test_negative_coefficient ... ignored
+test linear_equation::tests::test_negative_constant ... ignored
+test linear_equation::tests::test_zero_coefficient ... ignored
+test linear_equation::tests::test_zero_solution ... ignored
+test quadratic_equation::tests::test_equation_formatting ... ignored
+test quadratic_equation::tests::test_invalid_input_infinity ... ignored
+test quadratic_equation::tests::test_invalid_input_nan ... ignored
+test quadratic_equation::tests::test_negative_coefficients ... ignored
+test quadratic_equation::tests::test_no_real_roots ... ignored
+test quadratic_equation::tests::test_not_quadratic ... ignored
+test quadratic_equation::tests::test_one_root ... ignored
+test quadratic_equation::tests::test_steps_generated ... ignored
+test quadratic_equation::tests::test_two_roots ... ignored
+test quadratic_equation::tests::test_zero_constant ... ignored
+test statistics::tests::test_invalid_input_infinity ... ignored
+test statistics::tests::test_invalid_input_nan ... ignored
+test statistics::tests::test_mean ... ignored
+test statistics::tests::test_mean_empty ... ignored
+test statistics::tests::test_median_even ... ignored
+test statistics::tests::test_median_odd ... ignored
+test statistics::tests::test_mode_multiple ... ignored
+test statistics::tests::test_mode_single ... ignored
+test statistics::tests::test_quartiles ... ignored
+test statistics::tests::test_range ... ignored
+test statistics::tests::test_sample_variance_single_value ... ignored
+test statistics::tests::test_std_dev_population ... ignored
+test statistics::tests::test_std_dev_sample ... ignored
+test statistics::tests::test_variance_population ... ignored
+test statistics::tests::test_variance_sample ... ignored
+test tests::it_works ... ignored
+
+test result: ok. 0 passed; 0 failed; 50 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running benches/calculators.rs (target/release/deps/calculators-0c9b2e7cc8c5d02e)
+Gnuplot not found, using plotters backend
+Benchmarking linear_equation
+Benchmarking linear_equation: Warming up for 3.0000 s
+Benchmarking linear_equation: Collecting 100 samples in estimated 5.0011 s (19M iterations)
+Benchmarking linear_equation: Analyzing
+linear_equation         time:   [262.33 ns 262.77 ns 263.22 ns]
+Found 6 outliers among 100 measurements (6.00%)
+  5 (5.00%) high mild
+  1 (1.00%) high severe
+
+Benchmarking quadratic_equation
+Benchmarking quadratic_equation: Warming up for 3.0000 s
+Benchmarking quadratic_equation: Collecting 100 samples in estimated 5.0003 s (11M iterations)
+Benchmarking quadratic_equation: Analyzing
+quadratic_equation      time:   [447.95 ns 448.60 ns 449.29 ns]
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) high mild
+
+Benchmarking quadratic_no_roots
+Benchmarking quadratic_no_roots: Warming up for 3.0000 s
+Benchmarking quadratic_no_roots: Collecting 100 samples in estimated 5.0006 s (18M iterations)
+Benchmarking quadratic_no_roots: Analyzing
+quadratic_no_roots      time:   [270.56 ns 271.46 ns 272.39 ns]
+Found 5 outliers among 100 measurements (5.00%)
+  4 (4.00%) high mild
+  1 (1.00%) high severe
+
+Benchmarking distance_calculation
+Benchmarking distance_calculation: Warming up for 3.0000 s
+Benchmarking distance_calculation: Collecting 100 samples in estimated 5.0000 s (4.3B iterations)
+Benchmarking distance_calculation: Analyzing
+distance_calculation    time:   [1.1592 ns 1.1597 ns 1.1600 ns]
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) low mild
+
+Benchmarking circle_area
+Benchmarking circle_area: Warming up for 3.0000 s
+Benchmarking circle_area: Collecting 100 samples in estimated 5.0003 s (41M iterations)
+Benchmarking circle_area: Analyzing
+circle_area             time:   [122.19 ns 122.26 ns 122.32 ns]
+Found 6 outliers among 100 measurements (6.00%)
+  4 (4.00%) low severe
+  2 (2.00%) low mild
+
+Benchmarking triangle_area
+Benchmarking triangle_area: Warming up for 3.0000 s
+Benchmarking triangle_area: Collecting 100 samples in estimated 5.0007 s (33M iterations)
+Benchmarking triangle_area: Analyzing
+triangle_area           time:   [150.46 ns 150.57 ns 150.70 ns]
+Found 11 outliers among 100 measurements (11.00%)
+  1 (1.00%) low severe
+  4 (4.00%) low mild
+  3 (3.00%) high mild
+  3 (3.00%) high severe
+
+Benchmarking pythagorean_theorem
+Benchmarking pythagorean_theorem: Warming up for 3.0000 s
+Benchmarking pythagorean_theorem: Collecting 100 samples in estimated 5.0011 s (23M iterations)
+Benchmarking pythagorean_theorem: Analyzing
+pythagorean_theorem     time:   [214.83 ns 214.89 ns 214.95 ns]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) low mild
+
+Benchmarking trapezoid_area
+Benchmarking trapezoid_area: Warming up for 3.0000 s
+Benchmarking trapezoid_area: Collecting 100 samples in estimated 5.0007 s (25M iterations)
+Benchmarking trapezoid_area: Analyzing
+trapezoid_area          time:   [203.50 ns 203.55 ns 203.60 ns]
+Found 7 outliers among 100 measurements (7.00%)
+  2 (2.00%) low severe
+  4 (4.00%) low mild
+  1 (1.00%) high severe
+
+Benchmarking statistics_mean_10k
+Benchmarking statistics_mean_10k: Warming up for 3.0000 s
+Benchmarking statistics_mean_10k: Collecting 100 samples in estimated 5.0091 s (722k iterations)
+Benchmarking statistics_mean_10k: Analyzing
+statistics_mean_10k     time:   [6.9101 µs 6.9127 µs 6.9154 µs]
+Found 6 outliers among 100 measurements (6.00%)
+  4 (4.00%) low mild
+  2 (2.00%) high severe
+
+Benchmarking statistics_median_10k
+Benchmarking statistics_median_10k: Warming up for 3.0000 s
+Benchmarking statistics_median_10k: Collecting 100 samples in estimated 5.0037 s (742k iterations)
+Benchmarking statistics_median_10k: Analyzing
+statistics_median_10k   time:   [6.7315 µs 6.7340 µs 6.7363 µs]
+Found 4 outliers among 100 measurements (4.00%)
+  4 (4.00%) low mild
+
+Benchmarking statistics_variance_10k
+Benchmarking statistics_variance_10k: Warming up for 3.0000 s
+Benchmarking statistics_variance_10k: Collecting 100 samples in estimated 5.0516 s (475k iterations)
+Benchmarking statistics_variance_10k: Analyzing
+statistics_variance_10k time:   [10.617 µs 10.620 µs 10.623 µs]
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) low mild
+  2 (2.00%) high mild
+
+Benchmarking statistics_std_dev_10k
+Benchmarking statistics_std_dev_10k: Warming up for 3.0000 s
+Benchmarking statistics_std_dev_10k: Collecting 100 samples in estimated 5.0335 s (475k iterations)
+Benchmarking statistics_std_dev_10k: Analyzing
+statistics_std_dev_10k  time:   [10.567 µs 10.585 µs 10.601 µs]
+Found 7 outliers among 100 measurements (7.00%)
+  1 (1.00%) low severe
+  6 (6.00%) low mild
+
+Benchmarking statistics_mode_10k
+Benchmarking statistics_mode_10k: Warming up for 3.0000 s
+Benchmarking statistics_mode_10k: Collecting 100 samples in estimated 5.2499 s (61k iterations)
+Benchmarking statistics_mode_10k: Analyzing
+statistics_mode_10k     time:   [86.086 µs 86.195 µs 86.289 µs]
+Found 4 outliers among 100 measurements (4.00%)
+  4 (4.00%) low mild
+
+Benchmarking statistics_quartiles_10k
+Benchmarking statistics_quartiles_10k: Warming up for 3.0000 s
+Benchmarking statistics_quartiles_10k: Collecting 100 samples in estimated 5.0162 s (752k iterations)
+Benchmarking statistics_quartiles_10k: Analyzing
+statistics_quartiles_10k
+                        time:   [6.6367 µs 6.6390 µs 6.6411 µs]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) low mild
+
+Benchmarking statistics_range_10k
+Benchmarking statistics_range_10k: Warming up for 3.0000 s
+Benchmarking statistics_range_10k: Collecting 100 samples in estimated 5.0260 s (530k iterations)
+Benchmarking statistics_range_10k: Analyzing
+statistics_range_10k    time:   [9.4686 µs 9.4720 µs 9.4752 µs]
+Found 8 outliers among 100 measurements (8.00%)
+  2 (2.00%) low severe
+  3 (3.00%) low mild
+  1 (1.00%) high mild
+  2 (2.00%) high severe
+
+Benchmarking statistics_scaling/mean/100
+Benchmarking statistics_scaling/mean/100: Warming up for 3.0000 s
+Benchmarking statistics_scaling/mean/100: Collecting 100 samples in estimated 5.0001 s (70M iterations)
+Benchmarking statistics_scaling/mean/100: Analyzing
+statistics_scaling/mean/100
+                        time:   [71.027 ns 71.064 ns 71.099 ns]
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) low mild
+  1 (1.00%) high mild
+  1 (1.00%) high severe
+Benchmarking statistics_scaling/median/100
+Benchmarking statistics_scaling/median/100: Warming up for 3.0000 s
+Benchmarking statistics_scaling/median/100: Collecting 100 samples in estimated 5.0001 s (58M iterations)
+Benchmarking statistics_scaling/median/100: Analyzing
+statistics_scaling/median/100
+                        time:   [86.433 ns 86.508 ns 86.579 ns]
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) low severe
+  2 (2.00%) low mild
+Benchmarking statistics_scaling/variance/100
+Benchmarking statistics_scaling/variance/100: Warming up for 3.0000 s
+Benchmarking statistics_scaling/variance/100: Collecting 100 samples in estimated 5.0004 s (48M iterations)
+Benchmarking statistics_scaling/variance/100: Analyzing
+statistics_scaling/variance/100
+                        time:   [102.80 ns 102.82 ns 102.84 ns]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) low mild
+Benchmarking statistics_scaling/mean/1000
+Benchmarking statistics_scaling/mean/1000: Warming up for 3.0000 s
+Benchmarking statistics_scaling/mean/1000: Collecting 100 samples in estimated 5.0027 s (7.2M iterations)
+Benchmarking statistics_scaling/mean/1000: Analyzing
+statistics_scaling/mean/1000
+                        time:   [688.89 ns 689.05 ns 689.20 ns]
+Found 5 outliers among 100 measurements (5.00%)
+  3 (3.00%) low severe
+  1 (1.00%) low mild
+  1 (1.00%) high mild
+Benchmarking statistics_scaling/median/1000
+Benchmarking statistics_scaling/median/1000: Warming up for 3.0000 s
+Benchmarking statistics_scaling/median/1000: Collecting 100 samples in estimated 5.0010 s (7.6M iterations)
+Benchmarking statistics_scaling/median/1000: Analyzing
+statistics_scaling/median/1000
+                        time:   [659.12 ns 659.31 ns 659.49 ns]
+Found 7 outliers among 100 measurements (7.00%)
+  1 (1.00%) low severe
+  4 (4.00%) low mild
+  1 (1.00%) high mild
+  1 (1.00%) high severe
+Benchmarking statistics_scaling/variance/1000
+Benchmarking statistics_scaling/variance/1000: Warming up for 3.0000 s
+Benchmarking statistics_scaling/variance/1000: Collecting 100 samples in estimated 5.0003 s (4.7M iterations)
+Benchmarking statistics_scaling/variance/1000: Analyzing
+statistics_scaling/variance/1000
+                        time:   [1.0639 µs 1.0641 µs 1.0644 µs]
+Found 11 outliers among 100 measurements (11.00%)
+  1 (1.00%) low severe
+  9 (9.00%) low mild
+  1 (1.00%) high mild
+Benchmarking statistics_scaling/mean/10000
+Benchmarking statistics_scaling/mean/10000: Warming up for 3.0000 s
+Benchmarking statistics_scaling/mean/10000: Collecting 100 samples in estimated 5.0099 s (722k iterations)
+Benchmarking statistics_scaling/mean/10000: Analyzing
+statistics_scaling/mean/10000
+                        time:   [6.9345 µs 6.9370 µs 6.9399 µs]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking statistics_scaling/median/10000
+Benchmarking statistics_scaling/median/10000: Warming up for 3.0000 s
+Benchmarking statistics_scaling/median/10000: Collecting 100 samples in estimated 5.0011 s (742k iterations)
+Benchmarking statistics_scaling/median/10000: Analyzing
+statistics_scaling/median/10000
+                        time:   [6.7243 µs 6.7317 µs 6.7384 µs]
+Found 2 outliers among 100 measurements (2.00%)
+  1 (1.00%) low mild
+  1 (1.00%) high mild
+Benchmarking statistics_scaling/variance/10000
+Benchmarking statistics_scaling/variance/10000: Warming up for 3.0000 s
+Benchmarking statistics_scaling/variance/10000: Collecting 100 samples in estimated 5.0533 s (475k iterations)
+Benchmarking statistics_scaling/variance/10000: Analyzing
+statistics_scaling/variance/10000
+                        time:   [10.627 µs 10.630 µs 10.633 µs]
+Found 4 outliers among 100 measurements (4.00%)
+  3 (3.00%) low mild
+  1 (1.00%) high severe
+

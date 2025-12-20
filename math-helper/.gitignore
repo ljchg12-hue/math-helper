@@ -1,0 +1,56 @@
+# Rust
+/target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# Debug
+debug/
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+*~
+
+# Test outputs
+*.profraw
+*.profdata
+
+# Benchmarks
+/benches/target/
+
+# Build artifacts
+*.o
+*.so
+*.dylib
+*.dll
+*.exe
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Math Helper specific
+.math_helper/
+exports/
+*.log
+
+# Documentation
+/target/doc/
+
+# Coverage
+tarpaulin-report.html
+cobertura.xml

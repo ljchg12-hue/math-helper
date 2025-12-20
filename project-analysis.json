@@ -1,0 +1,1107 @@
+{
+  "project_name": "Math Helper",
+  "description": "Middle school mathematics learning assistant with calculators, practice problems, and progress tracking",
+  "language": "Python 3.x",
+  "total_files": 38,
+  "total_lines": 11161,
+  "analysis_date": "2025-12-21",
+
+  "dependencies": {
+    "core": [
+      "math",
+      "typing",
+      "dataclasses",
+      "pathlib",
+      "json",
+      "csv",
+      "datetime",
+      "collections"
+    ],
+    "numerical": [
+      "numpy",
+      "fractions"
+    ],
+    "visualization": [
+      "matplotlib",
+      "plotly"
+    ],
+    "ui": [
+      "streamlit"
+    ],
+    "configuration": [
+      "yaml"
+    ],
+    "testing": [
+      "re"
+    ]
+  },
+
+  "rust_migration_notes": {
+    "math_library": "Use `num` crate for numerical operations, `approx` for floating point comparison",
+    "numpy_equivalent": "ndarray crate for array operations",
+    "dataclasses": "Use Rust structs with #[derive(Debug, Clone)] and serde for serialization",
+    "fractions": "num-rational crate for Fraction type",
+    "yaml": "serde_yaml crate",
+    "json": "serde_json crate",
+    "csv": "csv crate",
+    "datetime": "chrono crate",
+    "logging": "log + env_logger or tracing crates",
+    "visualization": "plotters crate or egui for interactive plots",
+    "ui_framework": "Consider egui, iced, or slint for desktop UI; axum/actix-web for web backend",
+    "type_hints": "Native Rust type system with generics and traits",
+    "epsilon_comparison": "Use approx::relative_eq! or custom epsilon comparison functions"
+  },
+
+  "modules": {
+    "calculators": {
+      "description": "17 calculator modules for various mathematical operations",
+      "files": {
+        "algebraic_expression.py": {
+          "lines": 395,
+          "classes": [
+            {
+              "name": "Term",
+              "type": "dataclass",
+              "fields": {
+                "coefficient": "float",
+                "variables": "Dict[str, int]"
+              },
+              "rust_equivalent": "struct Term { coefficient: f64, variables: HashMap<String, i32> }"
+            },
+            {
+              "name": "AlgebraicCalculator",
+              "methods": [
+                "parse_term(term_str: str) -> Term",
+                "simplify(expression: str) -> str",
+                "multiply_monomials(term1: Term, term2: Term) -> Term",
+                "add_like_terms(terms: List[Term]) -> List[Term]",
+                "expand_polynomial(expression: str) -> str"
+              ],
+              "algorithms": [
+                "Regex-based term parsing",
+                "Variable power combination using dict operations",
+                "Like term collection and coefficient addition"
+              ]
+            }
+          ],
+          "imports": ["re", "math", "typing", "dataclasses"],
+          "rust_notes": "Use regex crate for parsing, HashMap for variable tracking"
+        },
+
+        "geometry.py": {
+          "lines": 284,
+          "classes": [
+            {
+              "name": "GeometryResult",
+              "type": "dataclass",
+              "fields": {
+                "result": "float",
+                "formula": "str",
+                "steps": "List[str]"
+              }
+            },
+            {
+              "name": "GeometryCalculator",
+              "methods": [
+                "pythagorean_theorem(a: float, b: float, c: float) -> GeometryResult",
+                "triangle_area(base: float, height: float) -> GeometryResult",
+                "circle_area(radius: float) -> GeometryResult",
+                "trapezoid_area(upper_base: float, lower_base: float, height: float) -> GeometryResult"
+              ]
+            }
+          ],
+          "functions": [
+            "validate_numeric_input(value, name) -> Tuple[bool, str, Optional[float]]"
+          ],
+          "validation_pattern": "NaN/Infinity check + type validation",
+          "rust_notes": "Use f64::is_nan(), f64::is_infinite(), Result<T, Error> for validation"
+        },
+
+        "quadratic_equation.py": {
+          "lines": 355,
+          "constants": {
+            "EPSILON": "1e-10"
+          },
+          "classes": [
+            {
+              "name": "QuadraticSolution",
+              "type": "dataclass",
+              "fields": {
+                "solution_type": "str",
+                "x1": "Optional[Union[float, complex]]",
+                "x2": "Optional[Union[float, complex]]",
+                "discriminant": "float",
+                "steps": "List[str]"
+              }
+            },
+            {
+              "name": "QuadraticEquationSolver",
+              "methods": [
+                "solve(a: float, b: float, c: float) -> QuadraticSolution",
+                "solve_by_factoring(a: float, b: float, c: float) -> QuadraticSolution",
+                "solve_by_completing_square(a: float, b: float, c: float) -> QuadraticSolution",
+                "_solve_two_real_roots(...) -> QuadraticSolution",
+                "_solve_one_real_root(...) -> QuadraticSolution",
+                "_solve_complex_roots(...) -> QuadraticSolution",
+                "_format_equation(a: float, b: float, c: float) -> str",
+                "get_vertex_form(a: float, b: float, c: float) -> Tuple[float, float, float]"
+              ],
+              "algorithms": [
+                "Discriminant calculation: D = b² - 4ac",
+                "Root formula: x = (-b ± √D) / (2a)",
+                "Complex number handling for D < 0",
+                "Completing the square method",
+                "Integer factorization trial (range -100 to 101)"
+              ]
+            }
+          ],
+          "rust_notes": "Use num::Complex<f64> for complex numbers, enum for SolutionType variants"
+        },
+
+        "linear_equation.py": {
+          "lines": 213,
+          "constants": {
+            "EPSILON": "1e-10"
+          },
+          "classes": [
+            {
+              "name": "EquationSolution",
+              "type": "dataclass",
+              "fields": {
+                "solution_type": "str",
+                "value": "Optional[float]",
+                "steps": "List[str]"
+              }
+            },
+            {
+              "name": "LinearEquationSolver",
+              "methods": [
+                "validate_coefficients(a, b, c) -> Tuple[bool, str]",
+                "solve(a, b, c) -> EquationSolution",
+                "_format_equation(a, b, c) -> str",
+                "get_latex_equation(a, b, c) -> str"
+              ],
+              "solution_types": ["unique", "infinite", "none"]
+            }
+          ],
+          "functions": [
+            "validate_nums(*values, param_names=None) -> Tuple[bool, str, Optional[Tuple[float]]]"
+          ],
+          "rust_notes": "Use enum SolutionType { Unique(f64), Infinite, None } for type safety"
+        },
+
+        "simultaneous_equations.py": {
+          "lines": 232,
+          "classes": [
+            {
+              "name": "SimultaneousSolution",
+              "type": "dataclass",
+              "fields": {
+                "solution_type": "str",
+                "x": "Optional[float]",
+                "y": "Optional[float]",
+                "method": "str",
+                "steps": "list"
+              }
+            },
+            {
+              "name": "SimultaneousEquationsSolver",
+              "methods": [
+                "solve_by_elimination(a1, b1, c1, a2, b2, c2) -> SimultaneousSolution",
+                "solve_by_substitution(a1, b1, c1, a2, b2, c2) -> SimultaneousSolution",
+                "_gcd(a: int, b: int) -> int"
+              ],
+              "algorithms": [
+                "Cramer's rule with determinant",
+                "Elimination method with LCM",
+                "Substitution method",
+                "Euclidean GCD algorithm"
+              ]
+            }
+          ],
+          "rust_notes": "Use num::integer::gcd, linear algebra libraries like nalgebra for matrix operations"
+        },
+
+        "square_root.py": {
+          "lines": 289,
+          "classes": [
+            {
+              "name": "SquareRootCalculator",
+              "methods": [
+                "sqrt(n: float) -> Tuple[float, str]",
+                "simplify_sqrt(n: float) -> str",
+                "is_perfect_square(n: float) -> bool",
+                "is_rational(n: float, tolerance: float) -> bool",
+                "sqrt_add(a1, b1, a2, b2) -> Tuple[float, str]",
+                "sqrt_multiply(a1, b1, a2, b2) -> Tuple[float, str]",
+                "sqrt_divide(a1, b1, a2, b2) -> Tuple[float, str]",
+                "rationalize_denominator(numerator, denominator_sqrt) -> Tuple[str, float]"
+              ],
+              "algorithms": [
+                "Prime factorization for simplification",
+                "Fraction.limit_denominator for rationality check",
+                "GCD-based fraction reduction"
+              ]
+            }
+          ],
+          "imports": ["fractions.Fraction", "math.gcd"],
+          "rust_notes": "Use num-rational::Rational64 for exact fractions"
+        },
+
+        "rational_number.py": {
+          "lines": 279,
+          "classes": [
+            {
+              "name": "RationalNumber",
+              "type": "dataclass",
+              "fields": {
+                "numerator": "int",
+                "denominator": "int"
+              },
+              "special_methods": [
+                "__post_init__: auto-normalize and reduce",
+                "__str__: format as fraction",
+                "__add__, __sub__, __mul__, __truediv__: arithmetic ops",
+                "__eq__, __lt__, __le__: comparison ops"
+              ],
+              "algorithms": [
+                "Auto-normalization: negative denominator → negative numerator",
+                "Auto-reduction using GCD",
+                "Cross multiplication for comparison"
+              ]
+            },
+            {
+              "name": "RationalNumberCalculator",
+              "methods": [
+                "add(r1, r2) -> RationalNumber",
+                "subtract(r1, r2) -> RationalNumber",
+                "multiply(r1, r2) -> RationalNumber",
+                "divide(r1, r2) -> RationalNumber",
+                "to_decimal(r) -> float",
+                "from_decimal(d: float, max_denominator: int) -> RationalNumber"
+              ]
+            }
+          ],
+          "rust_notes": "Use num-rational::Ratio<i64>, implement std::ops traits for operators"
+        },
+
+        "statistics.py": {
+          "lines": 229,
+          "classes": [
+            {
+              "name": "StatisticsCalculator",
+              "methods": [
+                "calculate_mean(data: List[float]) -> float",
+                "calculate_median(data: List[float]) -> float",
+                "calculate_mode(data: List[float]) -> List[float]",
+                "calculate_variance(data: List[float], sample: bool) -> float",
+                "calculate_std_dev(data: List[float], sample: bool) -> float",
+                "calculate_quartiles(data: List[float]) -> Dict[str, float]",
+                "calculate_range(data: List[float]) -> float"
+              ],
+              "algorithms": [
+                "Mean: sum / count",
+                "Median: sorted middle value(s)",
+                "Mode: Counter.most_common()",
+                "Variance: mean of squared deviations",
+                "Quartiles: 25th, 50th, 75th percentiles"
+              ]
+            }
+          ],
+          "imports": ["collections.Counter"],
+          "rust_notes": "Use HashMap for frequency counting, or statrs crate for statistical functions"
+        },
+
+        "probability.py": {
+          "lines": 186,
+          "classes": [
+            {
+              "name": "ProbabilityCalculator",
+              "methods": [
+                "factorial(n: int) -> int",
+                "permutation(n: int, r: int) -> int",
+                "combination(n: int, r: int) -> int",
+                "probability_event(favorable: int, total: int) -> float",
+                "probability_and(p1: float, p2: float, independent: bool) -> float",
+                "probability_or(p1: float, p2: float, mutually_exclusive: bool) -> float"
+              ],
+              "algorithms": [
+                "Factorial using recursion",
+                "Permutation: P(n,r) = n! / (n-r)!",
+                "Combination: C(n,r) = n! / (r!(n-r)!)",
+                "Basic probability: favorable / total"
+              ]
+            }
+          ],
+          "rust_notes": "Use num::BigUint for large factorials to prevent overflow"
+        },
+
+        "prime_factor.py": {
+          "lines": 167,
+          "classes": [
+            {
+              "name": "PrimeFactorCalculator",
+              "methods": [
+                "factorize(n: int) -> Dict[int, int]",
+                "is_prime(n: int) -> bool",
+                "get_divisors(n: int) -> List[int]",
+                "gcd(a: int, b: int) -> int",
+                "lcm(a: int, b: int) -> int"
+              ],
+              "algorithms": [
+                "Trial division factorization",
+                "Primality test up to sqrt(n)",
+                "Euclidean GCD",
+                "LCM = (a * b) / GCD(a, b)"
+              ]
+            }
+          ],
+          "rust_notes": "Use primes crate for efficient prime generation and factorization"
+        },
+
+        "factorization.py": {
+          "lines": 297,
+          "classes": [
+            {
+              "name": "FactorizationCalculator",
+              "methods": [
+                "factor_quadratic(a, b, c) -> Optional[str]",
+                "factor_common(expression: str) -> str",
+                "factor_difference_of_squares(a_sq, b_sq) -> str",
+                "factor_perfect_square(a, b, c) -> Optional[str]"
+              ],
+              "algorithms": [
+                "Finding factors p, q where p+q=b and p*q=c",
+                "GCD extraction for common factors",
+                "a² - b² = (a+b)(a-b) pattern",
+                "Perfect square trinomial detection"
+              ]
+            }
+          ],
+          "rust_notes": "Pattern matching and algebraic manipulation"
+        },
+
+        "linear_function.py": {
+          "lines": 243,
+          "classes": [
+            {
+              "name": "LinearFunction",
+              "type": "dataclass",
+              "fields": {
+                "slope": "float",
+                "intercept": "float"
+              },
+              "methods": [
+                "evaluate(x: float) -> float",
+                "find_x_intercept() -> Optional[float]",
+                "find_y_intercept() -> float",
+                "is_parallel(other) -> bool",
+                "is_perpendicular(other) -> bool"
+              ]
+            },
+            {
+              "name": "LinearFunctionCalculator",
+              "methods": [
+                "from_two_points(x1, y1, x2, y2) -> LinearFunction",
+                "from_point_slope(x1, y1, slope) -> LinearFunction",
+                "find_intersection(f1, f2) -> Optional[Tuple[float, float]]"
+              ],
+              "algorithms": [
+                "Slope: m = (y2-y1)/(x2-x1)",
+                "Point-slope form: y - y1 = m(x - x1)",
+                "Parallel: m1 = m2",
+                "Perpendicular: m1 * m2 = -1"
+              ]
+            }
+          ],
+          "rust_notes": "Use Option<T> for nullable returns, implement traits for comparisons"
+        },
+
+        "quadratic_function.py": {
+          "lines": 312,
+          "classes": [
+            {
+              "name": "QuadraticFunction",
+              "type": "dataclass",
+              "fields": {
+                "a": "float",
+                "b": "float",
+                "c": "float"
+              },
+              "methods": [
+                "evaluate(x: float) -> float",
+                "get_vertex() -> Tuple[float, float]",
+                "get_axis_of_symmetry() -> float",
+                "get_discriminant() -> float",
+                "find_roots() -> List[float]",
+                "to_vertex_form() -> str"
+              ]
+            },
+            {
+              "name": "QuadraticFunctionCalculator",
+              "methods": [
+                "from_vertex_form(a, h, k) -> QuadraticFunction",
+                "from_roots(r1, r2, a) -> QuadraticFunction",
+                "from_three_points(points) -> QuadraticFunction"
+              ],
+              "algorithms": [
+                "Vertex: (-b/2a, f(-b/2a))",
+                "Vertex form: a(x-h)² + k",
+                "System of equations for three points"
+              ]
+            }
+          ],
+          "rust_notes": "Vec<f64> for dynamic list of roots"
+        },
+
+        "function_graph.py": {
+          "lines": 378,
+          "classes": [
+            {
+              "name": "FunctionGrapher",
+              "methods": [
+                "plot_linear(slope, intercept, x_range, **kwargs)",
+                "plot_quadratic(a, b, c, x_range, **kwargs)",
+                "plot_proportional(k, x_range, **kwargs)",
+                "plot_inverse_proportional(k, x_range, **kwargs)",
+                "plot_multiple_functions(functions, x_range, **kwargs)"
+              ],
+              "dependencies": [
+                "numpy.linspace for x values",
+                "matplotlib.pyplot for plotting"
+              ]
+            }
+          ],
+          "rust_notes": "Use plotters crate for graphing, ndarray for numerical arrays"
+        },
+
+        "coordinate.py": {
+          "lines": 198,
+          "classes": [
+            {
+              "name": "Point",
+              "type": "dataclass",
+              "fields": {
+                "x": "float",
+                "y": "float"
+              },
+              "methods": [
+                "distance_to(other: Point) -> float",
+                "midpoint(other: Point) -> Point"
+              ]
+            },
+            {
+              "name": "CoordinatePlaneCalculator",
+              "methods": [
+                "calculate_distance(p1, p2) -> float",
+                "calculate_midpoint(p1, p2) -> Point",
+                "calculate_slope(p1, p2) -> Optional[float]",
+                "is_collinear(p1, p2, p3) -> bool"
+              ],
+              "algorithms": [
+                "Distance: √((x2-x1)² + (y2-y1)²)",
+                "Midpoint: ((x1+x2)/2, (y1+y2)/2)",
+                "Collinearity: area of triangle = 0"
+              ]
+            }
+          ],
+          "rust_notes": "Implement Copy trait for Point, use f64::hypot() for distance"
+        },
+
+        "linear_inequality.py": {
+          "lines": 156,
+          "classes": [
+            {
+              "name": "LinearInequalitySolver",
+              "methods": [
+                "solve(a, b, c, operator) -> dict",
+                "is_solution(a, b, c, operator, x) -> bool"
+              ],
+              "operators": ["<", "<=", ">", ">="],
+              "algorithms": [
+                "Same as linear equation but preserves inequality",
+                "Sign flip when dividing by negative"
+              ]
+            }
+          ],
+          "rust_notes": "Use enum InequalityOp { Less, LessEq, Greater, GreaterEq }"
+        }
+      }
+    },
+
+    "features": {
+      "description": "8 feature modules for learning support",
+      "files": {
+        "practice_generator.py": {
+          "lines": 323,
+          "classes": [
+            {
+              "name": "Problem",
+              "type": "dataclass",
+              "fields": {
+                "topic": "str",
+                "difficulty": "str",
+                "question": "str",
+                "answer": "Any",
+                "solution_steps": "List[str]",
+                "hints": "List[str]"
+              }
+            },
+            {
+              "name": "PracticeGenerator",
+              "methods": [
+                "generate_problem(topic, difficulty) -> Problem",
+                "generate_prime_factor_problem(difficulty) -> Problem",
+                "generate_linear_equation_problem(difficulty) -> Problem",
+                "generate_quadratic_problem(difficulty) -> Problem",
+                "generate_statistics_problem(difficulty) -> Problem"
+              ],
+              "random_ranges": {
+                "easy": "1-50",
+                "medium": "50-500",
+                "hard": "500-10000"
+              }
+            }
+          ],
+          "imports": ["random"],
+          "rust_notes": "Use rand crate for random number generation"
+        },
+
+        "mistake_notes.py": {
+          "lines": 225,
+          "classes": [
+            {
+              "name": "MistakeNote",
+              "type": "dataclass",
+              "fields": {
+                "topic": "str",
+                "problem": "str",
+                "wrong_answer": "Any",
+                "correct_answer": "Any",
+                "timestamp": "str",
+                "attempts": "int",
+                "mastered": "bool",
+                "notes": "str"
+              }
+            },
+            {
+              "name": "MistakeNotesManager",
+              "methods": [
+                "add_mistake(topic, problem, wrong, correct, notes) -> MistakeNote",
+                "get_mistakes(topic=None, mastered=None) -> List[MistakeNote]",
+                "mark_as_mastered(mistake_id)",
+                "increment_attempt(mistake_id)",
+                "delete_mistake(mistake_id)",
+                "export_to_json(filepath)",
+                "import_from_json(filepath)"
+              ],
+              "persistence": "JSON file storage"
+            }
+          ],
+          "rust_notes": "Use serde for JSON serialization, PathBuf for file paths"
+        },
+
+        "progress_tracker.py": {
+          "lines": 288,
+          "classes": [
+            {
+              "name": "TopicProgress",
+              "type": "dataclass",
+              "fields": {
+                "topic": "str",
+                "problems_attempted": "int",
+                "problems_correct": "int",
+                "last_study_date": "str",
+                "mastery_level": "float",
+                "total_study_time": "int"
+              }
+            },
+            {
+              "name": "ProgressTracker",
+              "methods": [
+                "record_attempt(topic, correct, duration_seconds)",
+                "get_progress(topic=None) -> List[TopicProgress]",
+                "get_overall_stats() -> dict",
+                "calculate_mastery_level(topic) -> float",
+                "get_study_sessions(topic=None) -> List[dict]"
+              ],
+              "calculations": [
+                "Mastery = correct / attempted",
+                "Study time tracking in seconds",
+                "Daily/weekly aggregations"
+              ]
+            }
+          ],
+          "imports": ["datetime"],
+          "rust_notes": "Use chrono::DateTime<Utc> for timestamps"
+        },
+
+        "history_manager.py": {
+          "lines": 196,
+          "classes": [
+            {
+              "name": "CalculationHistory",
+              "type": "dataclass",
+              "fields": {
+                "calculator_type": "str",
+                "input_data": "dict",
+                "result": "Any",
+                "timestamp": "str"
+              }
+            },
+            {
+              "name": "HistoryManager",
+              "methods": [
+                "add_entry(calc_type, input_data, result)",
+                "get_history(calc_type=None, limit=50) -> List[CalculationHistory]",
+                "clear_history(calc_type=None)",
+                "export_to_csv(filepath)",
+                "search_history(keyword) -> List[CalculationHistory]"
+              ],
+              "max_entries": 1000
+            }
+          ],
+          "rust_notes": "Use csv crate for CSV export, VecDeque for bounded history"
+        },
+
+        "visualizations.py": {
+          "lines": 346,
+          "classes": [
+            {
+              "name": "Visualizer",
+              "methods": [
+                "create_mastery_bar_chart(data) -> matplotlib.figure.Figure",
+                "create_progress_line_chart(data) -> Figure",
+                "create_study_time_pie_chart(data) -> Figure",
+                "create_weekly_heatmap(data) -> Figure"
+              ],
+              "font_handling": [
+                "Try NanumGothic for Korean",
+                "Fallback to Malgun Gothic, AppleGothic",
+                "DejaVu Sans for symbols"
+              ]
+            }
+          ],
+          "imports": ["matplotlib.pyplot", "matplotlib.font_manager"],
+          "rust_notes": "Use plotters crate, egui plots, or resvg for SVG generation"
+        },
+
+        "visualizations_plotly.py": {
+          "lines": 425,
+          "classes": [
+            {
+              "name": "PlotlyVisualizer",
+              "methods": [
+                "create_interactive_progress_chart(data, theme='light') -> go.Figure",
+                "create_mastery_radar_chart(data, theme='light') -> go.Figure",
+                "create_study_time_timeline(data, theme='light') -> go.Figure",
+                "create_topic_comparison(data, theme='light') -> go.Figure"
+              ],
+              "themes": {
+                "light": "white background, default colors",
+                "dark": "dark background, bright colors"
+              },
+              "features": [
+                "Hover templates",
+                "Interactive legends",
+                "Responsive layouts"
+              ]
+            }
+          ],
+          "imports": ["plotly.graph_objects", "plotly.express"],
+          "rust_notes": "Use plotly.rs or egui_plot for interactive plots"
+        },
+
+        "data_export.py": {
+          "lines": 365,
+          "classes": [
+            {
+              "name": "DataExporter",
+              "methods": [
+                "export_to_json(data, filepath)",
+                "export_to_csv(data, filepath)",
+                "export_progress_report(tracker, filepath)",
+                "export_mistake_summary(mistakes, filepath)"
+              ],
+              "security": [
+                "Path sanitization to prevent directory traversal",
+                "Safe export directory: ~/.math_helper/exports/",
+                "Filename validation"
+              ],
+              "formats": {
+                "json": "ensure_ascii=False, indent=2",
+                "csv": "utf-8-sig encoding for Excel compatibility"
+              }
+            }
+          ],
+          "rust_notes": "Use std::path::Path::canonicalize() for path safety, serde for serialization"
+        }
+      }
+    },
+
+    "ui": {
+      "description": "7 UI modules for Streamlit web interface",
+      "files": {
+        "themes.py": {
+          "lines": 311,
+          "themes": {
+            "LIGHT_THEME": {
+              "primary": "#1f77b4",
+              "secondary": "#ff7f0e",
+              "success": "#2ca02c",
+              "danger": "#d62728",
+              "background": "#ffffff",
+              "surface": "#f8f9fa"
+            },
+            "DARK_THEME": {
+              "primary": "#4dabf7",
+              "secondary": "#ffa94d",
+              "success": "#51cf66",
+              "danger": "#ff6b6b",
+              "background": "#1a1b1e",
+              "surface": "#25262b"
+            }
+          },
+          "functions": [
+            "apply_theme(theme_name)",
+            "create_badge(text, color, icon)",
+            "create_progress_bar(value, max_value, label)",
+            "create_card(title, content, footer)"
+          ],
+          "css_injection": "st.markdown with unsafe_allow_html=True",
+          "rust_notes": "For egui: use egui::Visuals::light() and dark(), define custom Color32 values"
+        },
+
+        "feature_pages.py": {
+          "lines": 539,
+          "classes": [
+            {
+              "name": "PracticePage",
+              "methods": ["render()"],
+              "streamlit_widgets": ["st.tabs", "st.selectbox", "st.button", "st.expander"]
+            },
+            {
+              "name": "MistakeNotesPage",
+              "methods": ["render()"],
+              "features": ["Filtering", "Mastered toggle", "Delete confirmation"]
+            },
+            {
+              "name": "ProgressPage",
+              "methods": ["render()"],
+              "visualizations": ["Mastery chart", "Study time", "Weekly heatmap"]
+            },
+            {
+              "name": "HistoryPage",
+              "methods": ["render()"],
+              "features": ["Search", "Filter by type", "Export CSV"]
+            }
+          ],
+          "rust_notes": "Requires web framework (axum/actix) + frontend (egui/yew/leptos) or full Rust UI framework"
+        },
+
+        "pages.py": {
+          "lines": "1200+ (estimated)",
+          "classes": [
+            "PrimeFactorPage",
+            "LinearEquationPage",
+            "FunctionGraphPage",
+            "RationalNumberPage",
+            "QuadraticEquationPage",
+            "StatisticsPage",
+            "ProbabilityPage",
+            "GeometryPage"
+          ],
+          "common_pattern": "st.number_input → calculator.method() → st.success(result) + st.expander(steps)",
+          "latex_rendering": "st.latex() for mathematical equations",
+          "rust_notes": "LaTeX rendering needs external tool or MathJax integration"
+        },
+
+        "sidebar.py": {
+          "lines": 82,
+          "functions": [
+            "render_sidebar()",
+            "render_calculator_menu()",
+            "render_feature_menu()",
+            "render_info_section()"
+          ],
+          "streamlit_api": ["st.sidebar", "st.radio", "st.markdown"],
+          "rust_notes": "Side panel in egui or navigation in web framework"
+        },
+
+        "responsive.py": {
+          "lines": 326,
+          "breakpoints": {
+            "mobile": "max-width: 768px",
+            "tablet": "max-width: 1024px",
+            "desktop": "max-width: 1440px"
+          },
+          "responsive_features": [
+            "Font size scaling",
+            "Grid layout adjustments",
+            "Touch-friendly button sizing",
+            "Collapsible sections on mobile"
+          ],
+          "css_media_queries": "Injected via st.markdown",
+          "rust_notes": "egui has built-in responsive sizing, web frameworks use CSS"
+        },
+
+        "accessibility.py": {
+          "lines": 372,
+          "features": [
+            "ARIA labels and roles",
+            "Keyboard navigation support",
+            "Skip links",
+            "Focus management",
+            "Screen reader announcements",
+            "High contrast mode support"
+          ],
+          "javascript_injection": "st.components.v1.html for custom JS",
+          "wcag_compliance": "Targeting WCAG 2.1 Level AA",
+          "rust_notes": "egui has basic accessibility, web frameworks can use standard ARIA attributes"
+        },
+
+        "__init__.py": {
+          "lines": 42,
+          "pattern": "Optional imports with try/except for graceful degradation",
+          "exports": "All UI components, pages, and utilities",
+          "rust_notes": "Use feature flags in Cargo.toml for optional UI dependencies"
+        }
+      }
+    },
+
+    "utils": {
+      "description": "4 utility modules for cross-cutting concerns",
+      "files": {
+        "logger.py": {
+          "lines": 94,
+          "classes": [
+            {
+              "name": "ColoredFormatter",
+              "parent": "logging.Formatter",
+              "features": "ANSI color codes for log levels"
+            }
+          ],
+          "functions": [
+            "get_logger(name='math_helper') -> logging.Logger"
+          ],
+          "log_levels": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+          "log_format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+          "rust_notes": "Use log crate + env_logger or tracing + tracing-subscriber"
+        },
+
+        "config.py": {
+          "lines": 128,
+          "classes": [
+            {
+              "name": "AppConfig",
+              "type": "dataclass",
+              "fields": {
+                "title": "str",
+                "layout": "str",
+                "initial_sidebar_state": "str"
+              }
+            },
+            {
+              "name": "CalculatorConfig",
+              "type": "dataclass",
+              "fields": {
+                "prime_factor": "Dict[str, Any]",
+                "linear_equation": "Dict[str, Any]",
+                "function_graph": "Dict[str, Any]"
+              }
+            },
+            {
+              "name": "Config",
+              "pattern": "Singleton",
+              "methods": [
+                "get(key, default) -> Any",
+                "app() -> AppConfig",
+                "calculators() -> CalculatorConfig"
+              ],
+              "file_format": "YAML (config/settings.yaml)",
+              "features": [
+                "Dot notation for nested access: 'app.title'",
+                "Default config fallback",
+                "Singleton pattern using __new__"
+              ]
+            }
+          ],
+          "imports": ["yaml", "pathlib"],
+          "rust_notes": "Use config crate or serde_yaml, lazy_static for singleton, or use std::sync::OnceLock"
+        },
+
+        "i18n.py": {
+          "lines": 418,
+          "classes": [
+            {
+              "name": "I18nManager",
+              "supported_languages": ["ko", "en", "ja"],
+              "methods": [
+                "get_text(key, default) -> str",
+                "t(key, **kwargs) -> str",
+                "set_language(language) -> bool",
+                "get_current_language() -> str",
+                "load_custom_translations(filepath) -> bool",
+                "export_translations(filepath, language) -> bool"
+              ],
+              "translations": {
+                "ko": "~100 keys",
+                "en": "~100 keys",
+                "ja": "~100 keys"
+              },
+              "features": [
+                "String formatting with .format()",
+                "Custom translation loading from JSON",
+                "Translation export to JSON"
+              ]
+            }
+          ],
+          "rust_notes": "Use fluent crate for L10n, or custom HashMap-based solution with serde"
+        },
+
+        "__init__.py": {
+          "lines": 14,
+          "exports": ["get_logger", "Config", "I18nManager"],
+          "pattern": "Central import point for utilities",
+          "rust_notes": "Use pub use for re-exports in lib.rs"
+        }
+      }
+    }
+  },
+
+  "common_patterns": {
+    "validation": {
+      "function_name": "validate_nums or validate_numeric_input",
+      "checks": ["type check", "NaN check", "Infinity check"],
+      "return_type": "Tuple[bool, str, Optional[validated_values]]",
+      "rust_equivalent": "Result<Vec<f64>, ValidationError> with custom error type"
+    },
+
+    "result_objects": {
+      "pattern": "@dataclass with result, formula, steps fields",
+      "purpose": "Encapsulate calculation results with explanation",
+      "rust_equivalent": "struct with #[derive(Debug, Clone, Serialize, Deserialize)]"
+    },
+
+    "step_tracking": {
+      "field": "steps: List[str]",
+      "usage": "steps.append('calculation step')",
+      "purpose": "Educational tool showing work",
+      "rust_equivalent": "Vec<String> with .push()"
+    },
+
+    "epsilon_comparison": {
+      "constant": "EPSILON = 1e-10",
+      "usage": "math.isclose(a, b, abs_tol=EPSILON)",
+      "purpose": "Floating point comparison",
+      "rust_equivalent": "const EPSILON: f64 = 1e-10; (a - b).abs() < EPSILON or approx::relative_eq!(a, b)"
+    },
+
+    "singleton_config": {
+      "pattern": "Config class with __new__ override",
+      "purpose": "Single global configuration instance",
+      "rust_equivalent": "lazy_static! { static ref CONFIG: Config = Config::new(); } or std::sync::OnceLock"
+    },
+
+    "optional_imports": {
+      "pattern": "try/except ImportError with None fallback",
+      "purpose": "Graceful degradation without optional deps",
+      "rust_equivalent": "Cargo.toml feature flags with #[cfg(feature = \"...\")]"
+    }
+  },
+
+  "type_mapping": {
+    "python_to_rust": {
+      "int": "i32, i64, or isize",
+      "float": "f32 or f64",
+      "str": "String or &str",
+      "bool": "bool",
+      "List[T]": "Vec<T>",
+      "Dict[K, V]": "HashMap<K, V> or BTreeMap<K, V>",
+      "Tuple[T1, T2]": "(T1, T2)",
+      "Optional[T]": "Option<T>",
+      "Union[T1, T2]": "enum with variants",
+      "Any": "Box<dyn Any> or generic with trait bounds",
+      "complex": "num::Complex<f64>",
+      "Fraction": "num::rational::Ratio<i64>",
+      "dataclass": "struct with #[derive(...)]",
+      "None": "None (in Option) or ()",
+      "Path": "std::path::PathBuf",
+      "datetime": "chrono::DateTime<Utc>"
+    }
+  },
+
+  "recommended_rust_crates": {
+    "numerical": [
+      "num (complex, rational, integer ops)",
+      "approx (floating point comparison)",
+      "ndarray (numpy equivalent)",
+      "statrs (statistics)",
+      "primes (prime number operations)"
+    ],
+    "serialization": [
+      "serde (serialization framework)",
+      "serde_json (JSON)",
+      "serde_yaml (YAML)",
+      "csv (CSV)"
+    ],
+    "utilities": [
+      "chrono (datetime)",
+      "log + env_logger or tracing (logging)",
+      "config or figment (configuration)",
+      "thiserror or anyhow (error handling)"
+    ],
+    "ui": [
+      "egui (immediate mode GUI)",
+      "iced (Elm-like GUI)",
+      "slint (declarative UI)",
+      "plotters (plotting)",
+      "axum or actix-web (web backend)"
+    ],
+    "other": [
+      "regex (pattern matching)",
+      "rand (random numbers)",
+      "rayon (parallel iteration)"
+    ]
+  },
+
+  "migration_priorities": {
+    "phase_1_core": [
+      "All calculator modules (17 files)",
+      "Validation functions",
+      "Result dataclasses → structs",
+      "Basic math operations"
+    ],
+    "phase_2_features": [
+      "Practice problem generation",
+      "Progress tracking",
+      "Mistake notes",
+      "History management"
+    ],
+    "phase_3_persistence": [
+      "JSON export/import",
+      "CSV export",
+      "Configuration loading"
+    ],
+    "phase_4_ui": [
+      "Choose UI framework (egui/iced/web)",
+      "Port calculator pages",
+      "Port feature pages",
+      "Theming and responsive design"
+    ],
+    "phase_5_visualization": [
+      "Function graphing",
+      "Progress charts",
+      "Interactive plots"
+    ]
+  },
+
+  "architecture_recommendations": {
+    "project_structure": "Workspace with multiple crates: math_core, math_features, math_ui",
+    "error_handling": "Use Result<T, E> throughout, custom error types with thiserror",
+    "testing": "Unit tests in same files, integration tests in tests/ directory",
+    "documentation": "Use cargo doc, document all public APIs",
+    "concurrency": "Consider rayon for parallel problem generation",
+    "modularity": "Trait-based design for calculators, feature flags for optional components"
+  }
+}
