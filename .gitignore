@@ -1,20 +1,72 @@
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
-venv/
-env/
-*.egg-info/
-dist/
 build/
-*.spec
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# IDEs
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# Logs
 *.log
-MathHelper_Portable/
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Electron
+electron-app/node_modules/
+electron-app/dist/
+electron-app/.cache/
+*.dmg
+*.exe
+*.AppImage
+
+# Build artifacts
 *.zip
+*.tar.gz
+MathHelper_Portable/
 target/
-node_modules/
 math_helper_rust/
 math_helper_tauri/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.spec

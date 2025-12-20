@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Helper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        #loading {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #app-frame {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            display: none;
+        }
+
+        .loading-text {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="spinner"></div>
+        <h2>Math Helper</h2>
+        <p class="loading-text">중학교 수학 학습 도우미를 시작하는 중...</p>
+    </div>
+
+    <iframe id="app-frame"></iframe>
+
+    <script>
+        // Streamlit 서버 연결 시도
+        const STREAMLIT_URL = 'http://localhost:8501';
+        const MAX_RETRIES = 30;
+        let retryCount = 0;
+
+        function checkServer() {
+            fetch(STREAMLIT_URL)
+                .then(response => {
+                    if (response.ok) {
+                        // 서버 연결 성공
+                        document.getElementById('loading').style.display = 'none';
+                        const frame = document.getElementById('app-frame');
+                        frame.src = STREAMLIT_URL;
+                        frame.style.display = 'block';
+                    } else {
+                        throw new Error('Server not ready');
+                    }
+                })
+                .catch(() => {
+                    // 재시도
+                    retryCount++;
+                    if (retryCount < MAX_RETRIES) {
+                        setTimeout(checkServer, 1000);
+                    } else {
+                        document.querySelector('.loading-text').textContent =
+                            '서버 시작 실패. 앱을 재시작해주세요.';
+                    }
+                });
+        }
+
+        // 1초 후 서버 확인 시작
+        setTimeout(checkServer, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+{
+  "name": "math-helper",
+  "version": "1.0.0",
+  "description": "중학교 수학 학습 도우미",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "keywords": ["math", "education", "streamlit", "electron"],
+  "author": "Math Helper Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  },
+  "build": {
+    "appId": "com.mathhelper.app",
+    "productName": "Math Helper",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "python-server/**/*",
+      "!node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../src",
+        "to": "app/src"
+      },
+      {
+        "from": "../config",
+        "to": "app/config"
+      },
+      {
+        "from": "../requirements.txt",
+        "to": "app/"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "build/icon.png"
+    }
+  }
+}
