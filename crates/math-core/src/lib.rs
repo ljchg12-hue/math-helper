@@ -18,12 +18,14 @@
 //! - `inequality`: Linear inequality solver
 //! - `probability`: Combinatorics and probability
 //! - `matrix`: Matrix operations (using ndarray)
+//!
+//! ### Phase 3 (Advanced Mathematics)
 //! - `exponent`: Exponent and logarithm operations
 //! - `trigonometry`: Trigonometric functions
 //! - `sequence`: Arithmetic and geometric sequences
-//! - `vector`: Vector operations
+//! - `vector`: 3D vector operations
 //! - `complex_number`: Complex number arithmetic
-//! - `calculus`: Basic calculus operations
+//! - `calculus`: Basic calculus operations (numerical methods)
 
 pub mod errors;
 pub mod validation;
@@ -42,6 +44,14 @@ pub mod polynomial;
 pub mod inequality;
 pub mod probability;
 pub mod matrix;
+
+// Phase 3 modules
+pub mod exponent;
+pub mod trigonometry;
+pub mod sequence;
+pub mod vector;
+pub mod complex_number;
+pub mod calculus;
 
 // Common constants
 pub const EPSILON: f64 = 1e-10;

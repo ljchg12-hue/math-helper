@@ -69,6 +69,71 @@ enum Commands {
     IsPrime {
         n: u64,
     },
+
+    /// Calculate power: base^exponent
+    Power {
+        base: f64,
+        exponent: f64,
+    },
+
+    /// Calculate logarithm: log_base(value)
+    Log {
+        value: f64,
+        base: f64,
+    },
+
+    /// Calculate sine (degrees)
+    Sin {
+        angle: f64,
+    },
+
+    /// Calculate cosine (degrees)
+    Cos {
+        angle: f64,
+    },
+
+    /// Calculate tangent (degrees)
+    Tan {
+        angle: f64,
+    },
+
+    /// Generate arithmetic sequence
+    ArithSeq {
+        first: f64,
+        diff: f64,
+        n: usize,
+    },
+
+    /// Generate Fibonacci sequence
+    Fibonacci {
+        n: usize,
+    },
+
+    /// Calculate vector dot product
+    VectorDot {
+        x1: f64,
+        y1: f64,
+        z1: f64,
+        x2: f64,
+        y2: f64,
+        z2: f64,
+    },
+
+    /// Add complex numbers
+    ComplexAdd {
+        re1: f64,
+        im1: f64,
+        re2: f64,
+        im2: f64,
+    },
+
+    /// Numerical derivative
+    Derivative {
+        /// Polynomial coefficients (e.g., "1,0,-3" for x² - 3)
+        #[arg(value_delimiter = ',')]
+        coeffs: Vec<f64>,
+        x: f64,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -158,6 +223,84 @@ fn main() -> anyhow::Result<()> {
             } else {
                 println!("{} is not prime", n);
             }
+        }
+
+        Commands::Power { base, exponent } => {
+            let result = exponent::power(base, exponent)?;
+            println!("Power Calculation:");
+            for step in &result.steps {
+                println!("  {}", step);
+            }
+        }
+
+        Commands::Log { value, base } => {
+            let result = exponent::logarithm(value, base)?;
+            println!("Logarithm Calculation:");
+            for step in &result.steps {
+                println!("  {}", step);
+            }
+        }
+
+        Commands::Sin { angle } => {
+            let result = trigonometry::sin_deg(angle)?;
+            println!("sin({angle}°) = {}", result.result);
+        }
+
+        Commands::Cos { angle } => {
+            let result = trigonometry::cos_deg(angle)?;
+            println!("cos({angle}°) = {}", result.result);
+        }
+
+        Commands::Tan { angle } => {
+            let result = trigonometry::tan_deg(angle)?;
+            println!("tan({angle}°) = {}", result.result);
+        }
+
+        Commands::ArithSeq { first, diff, n } => {
+            let result = sequence::arithmetic_sequence(first, diff, n)?;
+            println!("Arithmetic Sequence:");
+            println!("  Formula: {}", result.formula);
+            println!("  Terms: {:?}", result.terms);
+            println!("  Sum: {}", result.sum);
+        }
+
+        Commands::Fibonacci { n } => {
+            let result = sequence::fibonacci_sequence(n)?;
+            println!("Fibonacci Sequence ({} terms):", n);
+            println!("  Terms: {:?}", result.terms);
+            println!("  Sum: {}", result.sum);
+        }
+
+        Commands::VectorDot { x1, y1, z1, x2, y2, z2 } => {
+            let v1 = vector::Vector3D::new(x1, y1, z1);
+            let v2 = vector::Vector3D::new(x2, y2, z2);
+            let dot = v1.dot(&v2);
+            println!("Vector Dot Product:");
+            println!("  v1 = ({}, {}, {})", x1, y1, z1);
+            println!("  v2 = ({}, {}, {})", x2, y2, z2);
+            println!("  v1 · v2 = {}", dot);
+        }
+
+        Commands::ComplexAdd { re1, im1, re2, im2 } => {
+            use num_complex::Complex64;
+            let c1 = Complex64::new(re1, im1);
+            let c2 = Complex64::new(re2, im2);
+            let result = complex_number::complex_add(c1, c2);
+            println!("Complex Addition:");
+            println!("  ({} + {}i) + ({} + {}i) = {} + {}i", re1, im1, re2, im2, result.real, result.imag);
+        }
+
+        Commands::Derivative { coeffs, x } => {
+            // Create polynomial function from coefficients
+            let f = |x: f64| {
+                coeffs.iter().enumerate()
+                    .map(|(i, &c)| c * x.powi(i as i32))
+                    .sum()
+            };
+
+            let deriv = calculus::numerical_derivative(f, x, 0.0001);
+            println!("Numerical Derivative:");
+            println!("  f'({}) ≈ {}", x, deriv);
         }
     }
 

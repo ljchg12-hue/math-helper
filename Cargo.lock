@@ -408,6 +408,7 @@ dependencies = [
  "env_logger",
  "log",
  "math-core",
+ "num-complex",
  "serde_json",
 ]
 

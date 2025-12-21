@@ -75,6 +75,59 @@ fn bench_simultaneous(c: &mut Criterion) {
     });
 }
 
+fn bench_power(c: &mut Criterion) {
+    c.bench_function("power_calculation", |b| {
+        b.iter(|| exponent::power(black_box(2.0), black_box(10.0)))
+    });
+}
+
+fn bench_logarithm(c: &mut Criterion) {
+    c.bench_function("logarithm_calculation", |b| {
+        b.iter(|| exponent::logarithm(black_box(1000.0), black_box(10.0)))
+    });
+}
+
+fn bench_trigonometry(c: &mut Criterion) {
+    c.bench_function("sin_calculation", |b| {
+        b.iter(|| trigonometry::sin_deg(black_box(45.0)))
+    });
+}
+
+fn bench_sequence(c: &mut Criterion) {
+    c.bench_function("arithmetic_sequence_10", |b| {
+        b.iter(|| sequence::arithmetic_sequence(black_box(1.0), black_box(2.0), black_box(10)))
+    });
+}
+
+fn bench_vector_operations(c: &mut Criterion) {
+    c.bench_function("vector_dot_product", |b| {
+        b.iter(|| {
+            let v1 = vector::Vector3D::new(black_box(1.0), black_box(2.0), black_box(3.0));
+            let v2 = vector::Vector3D::new(black_box(4.0), black_box(5.0), black_box(6.0));
+            v1.dot(&v2)
+        })
+    });
+}
+
+fn bench_complex_multiply(c: &mut Criterion) {
+    use num_complex::Complex64;
+    c.bench_function("complex_multiply", |b| {
+        b.iter(|| {
+            complex_number::complex_multiply(
+                Complex64::new(black_box(1.0), black_box(2.0)),
+                Complex64::new(black_box(3.0), black_box(4.0))
+            )
+        })
+    });
+}
+
+fn bench_derivative(c: &mut Criterion) {
+    c.bench_function("numerical_derivative", |b| {
+        let f = |x: f64| x * x;
+        b.iter(|| calculus::numerical_derivative(&f, black_box(2.0), black_box(0.0001)))
+    });
+}
+
 criterion_group!(
     benches,
     bench_linear_equation,
@@ -84,6 +137,13 @@ criterion_group!(
     bench_permutation,
     bench_combination,
     bench_prime_factorize,
-    bench_simultaneous
+    bench_simultaneous,
+    bench_power,
+    bench_logarithm,
+    bench_trigonometry,
+    bench_sequence,
+    bench_vector_operations,
+    bench_complex_multiply,
+    bench_derivative
 );
 criterion_main!(benches);
