@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  math-helper:
+    build: .
+    image: math-helper:latest
+    container_name: math-helper
+    volumes:
+      - ./data:/data
+    environment:
+      - RUST_LOG=info
+    command: ["--help"]

@@ -2,11 +2,29 @@
 
 **고성능 Rust 수학 계산 라이브러리**로, 중학교 수학 개념을 빠르고 정확하게 계산합니다.
 
+[![CI](https://github.com/ljchg12-hue/math-helper/actions/workflows/ci.yml/badge.svg)]()
+[![Coverage](https://img.shields.io/codecov/c/github/ljchg12-hue/math-helper)]()
 [![Tests](https://img.shields.io/badge/tests-140%2B%20passing-brightgreen)]()
 [![Benchmarks](https://img.shields.io/badge/benchmarks-15%20functions-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
-## 🎯 **NEW! Phase 4 완료** (v0.4.0)
+## 🎯 **NEW! Phase 5 완료** (v1.0.0)
+
+**배포 준비 완료**로 프로덕션 환경에서 사용 가능한 수준으로 완성!
+
+### ✨ Phase 5 신규 기능
+- **CI/CD 파이프라인**: GitHub Actions를 통한 자동화된 테스트, 빌드, 릴리스
+- **크로스 플랫폼 바이너리**: Linux (gnu/musl), Windows, macOS (x86_64/ARM64) 지원
+- **Docker 컨테이너**: 멀티스테이지 빌드로 최적화된 이미지 (50MB 미만)
+- **빌드 최적화**: LTO, PGO로 10-20% 추가 성능 향상
+- **보안 감사**: cargo-audit, cargo-deny를 통한 의존성 검증
+- **API 문서**: 자동 생성 및 GitHub Pages 배포
+- **성능 프로파일링**: Flamegraph, perf, Instruments, Valgrind 지원
+- **배포 패키지**: .tar.gz, .zip 자동 생성
+
+---
+
+## 🎯 Phase 4 완료 (v0.4.0)
 
 **학습 기능 추가**로 완전한 중학교 수학 학습 플랫폼 완성!
 
@@ -56,6 +74,58 @@
 - **wrong_answer_note**: 오답노트 및 복습 관리
 - **progress_tracker**: 학습 진도 추적 및 통계
 - **export**: 데이터 내보내기 (CSV/JSON)
+
+## 📥 설치
+
+### 바이너리 다운로드
+
+```bash
+# Linux (x86_64)
+wget https://github.com/ljchg12-hue/math-helper/releases/latest/download/math-linux-amd64
+chmod +x math-linux-amd64
+./math-linux-amd64 --help
+
+# macOS (x86_64)
+wget https://github.com/ljchg12-hue/math-helper/releases/latest/download/math-macos-amd64
+chmod +x math-macos-amd64
+./math-macos-amd64 --help
+
+# macOS (ARM64 - Apple Silicon)
+wget https://github.com/ljchg12-hue/math-helper/releases/latest/download/math-macos-arm64
+chmod +x math-macos-arm64
+./math-macos-arm64 --help
+
+# Windows
+# Download math-windows-amd64.exe from GitHub Releases
+# https://github.com/ljchg12-hue/math-helper/releases/latest
+```
+
+### Cargo 설치
+
+```bash
+# Git에서 직접 설치
+cargo install --git https://github.com/ljchg12-hue/math-helper math-cli
+
+# 로컬 빌드
+git clone https://github.com/ljchg12-hue/math-helper.git
+cd math-helper
+cargo install --path crates/math-cli
+```
+
+### Docker
+
+```bash
+# 이미지 가져오기
+docker pull ghcr.io/ljchg12-hue/math-helper:latest
+
+# 실행 예시
+docker run math-helper linear 2 -4
+docker run math-helper quadratic 1 -5 6
+docker run math-helper sin 45
+
+# 인터랙티브 모드
+docker run -it math-helper
+```
 
 ## 🚀 시작하기
 
@@ -372,7 +442,18 @@ cargo doc --open
 - [x] 데이터 내보내기 (CSV/JSON) 🆕
 - **릴리스**: v0.4.0 (2025-12-21)
 
-### Phase 5: 그래프/시각화 (계획 중)
+### Phase 5: 프로젝트 최종 마무리 + 배포 준비 ✅
+- [x] GitHub Actions CI/CD 파이프라인 🆕
+- [x] 크로스 플랫폼 릴리스 빌드 (Linux/Windows/macOS) 🆕
+- [x] Docker 컨테이너화 (멀티스테이지) 🆕
+- [x] 빌드 최적화 (LTO, PGO) 🆕
+- [x] 보안 감사 (cargo-audit, cargo-deny) 🆕
+- [x] API 문서 자동 배포 (GitHub Pages) 🆕
+- [x] 성능 프로파일링 도구 🆕
+- [x] 배포 패키지 생성 (.tar.gz, .zip) 🆕
+- **릴리스**: v1.0.0 (2025-12-21)
+
+### Phase 6: 그래프/시각화 (계획 중)
 - [ ] plotters 통합
 - [ ] 2D/3D 그래프 렌더링
 - [ ] 수식 시각화
@@ -443,4 +524,4 @@ This project is licensed under the MIT License.
 
 **Made with 🦀 Rust & ❤️ for Education**
 
-**v0.4.0** | 2025-12-21 | Phase 4 완료 - 완전한 중학교 수학 학습 플랫폼
+**v1.0.0** | 2025-12-21 | Phase 5 완료 - 프로덕션 준비 완료 🚀
