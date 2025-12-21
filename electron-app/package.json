@@ -1,60 +1,41 @@
 {
-  "name": "math-helper",
+  "name": "math-helper-gui",
   "version": "1.0.0",
-  "description": "중학교 수학 학습 도우미",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "build:linux": "electron-builder --linux"
+    "dev": "concurrently \"node node_modules/vite/bin/vite.js\" \"electron .\"",
+    "build": "node node_modules/vite/bin/vite.js build",
+    "build:win": "npm run build && node node_modules/electron-builder/out/cli/cli.js --win --x64 --dir",
+    "pack:win": "npm run build && node node_modules/electron-builder/out/cli/cli.js --win --x64"
   },
-  "keywords": ["math", "education", "streamlit", "electron"],
-  "author": "Math Helper Team",
-  "license": "MIT",
   "devDependencies": {
     "electron": "^28.0.0",
-    "electron-builder": "^24.9.1"
+    "electron-builder": "^24.9.0",
+    "vite": "^6.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "tailwindcss": "^3.4.15",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "typescript": "^5.6.0",
+    "concurrently": "^8.2.2"
   },
   "dependencies": {
-    "electron-store": "^8.1.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "lucide-react": "^0.460.0"
   },
   "build": {
     "appId": "com.mathhelper.app",
-    "productName": "Math Helper",
-    "files": [
-      "main.js",
-      "preload.js",
-      "renderer/**/*",
-      "python-server/**/*",
-      "!node_modules/**/*"
-    ],
-    "extraResources": [
-      {
-        "from": "../src",
-        "to": "app/src"
-      },
-      {
-        "from": "../config",
-        "to": "app/config"
-      },
-      {
-        "from": "../requirements.txt",
-        "to": "app/"
-      }
-    ],
+    "productName": "MathHelper",
     "win": {
-      "target": "nsis",
-      "icon": "build/icon.ico"
+      "target": ["portable"]
     },
-    "mac": {
-      "target": "dmg",
-      "icon": "build/icon.icns"
-    },
-    "linux": {
-      "target": "AppImage",
-      "icon": "build/icon.png"
-    }
+    "files": [
+      "dist/**/*",
+      "main.js",
+      "preload.js"
+    ]
   }
 }
