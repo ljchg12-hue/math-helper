@@ -1,7 +1,9 @@
 [workspace]
 members = [
     "crates/math-core",
-    "crates/math-cli", "crates/math-features",
+    "crates/math-cli",
+    "crates/math-features",
+    "crates/math-tui",
 ]
 resolver = "2"
 

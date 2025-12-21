@@ -1,0 +1,25 @@
+[package]
+name = "math-tui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "math-tui"
+path = "src/main.rs"
+
+[dependencies]
+# Workspace dependencies
+math-core = { path = "../math-core" }
+math-features = { path = "../math-features" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+# TUI
+ratatui = "0.26"
+crossterm = "0.27"
+
+# Utilities
+chrono = "0.4"

@@ -8,7 +8,22 @@
 [![Benchmarks](https://img.shields.io/badge/benchmarks-15%20functions-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
-## 🎯 **NEW! Phase 5 완료** (v1.0.0)
+## 🎯 **NEW! Phase 6-B 완료** (v1.1.0)
+
+**인터랙티브 TUI + 교육 기능**으로 터미널에서 바로 '와!' 할 수준의 UX 완성!
+
+### ✨ Phase 6-B 신규 기능
+- **📱 Ratatui TUI**: 현대적인 터미널 UI (다크/라이트 테마)
+- **🧮 인터랙티브 계산기**: 실시간 입력/결과 표시
+- **📊 단계별 풀이**: 수학 문제 풀이 과정 애니메이션
+- **📈 학습 대시보드**: 진도 추적 및 ASCII 그래프
+- **📝 오답노트 UI**: 틀린 문제 분석 시스템
+- **⌨️  키보드 네비게이션**: vim-style 키 지원 (hjkl)
+- **🎨 테마 전환**: 다크/라이트 모드 실시간 변경
+
+---
+
+## 🎯 Phase 5 완료 (v1.0.0)
 
 **배포 준비 완료**로 프로덕션 환경에서 사용 가능한 수준으로 완성!
 
@@ -103,13 +118,17 @@ chmod +x math-macos-arm64
 ### Cargo 설치
 
 ```bash
-# Git에서 직접 설치
+# Git에서 직접 설치 (CLI)
 cargo install --git https://github.com/ljchg12-hue/math-helper math-cli
+
+# Git에서 직접 설치 (TUI) 🆕
+cargo install --git https://github.com/ljchg12-hue/math-helper math-tui
 
 # 로컬 빌드
 git clone https://github.com/ljchg12-hue/math-helper.git
 cd math-helper
-cargo install --path crates/math-cli
+cargo install --path crates/math-cli   # CLI
+cargo install --path crates/math-tui   # TUI (인터랙티브) 🆕
 ```
 
 ### Docker
