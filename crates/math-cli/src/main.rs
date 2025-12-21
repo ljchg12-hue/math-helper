@@ -2,6 +2,7 @@
 
 use clap::{Parser, Subcommand};
 use math_core::*;
+use math_features::*;
 
 #[derive(Parser)]
 #[command(name = "math")]
@@ -133,6 +134,36 @@ enum Commands {
         #[arg(value_delimiter = ',')]
         coeffs: Vec<f64>,
         x: f64,
+    },
+
+    /// Generate practice problems
+    Practice {
+        /// Topic: linear, quadratic, geometry
+        topic: String,
+        #[arg(short, long, default_value = "easy")]
+        difficulty: String,
+        #[arg(short = 'n', long, default_value_t = 5)]
+        count: usize,
+    },
+
+    /// View learning progress
+    Progress {
+        #[arg(short, long)]
+        topic: Option<String>,
+    },
+
+    /// View wrong answer notebook
+    WrongAnswers {
+        #[arg(short, long)]
+        topic: Option<String>,
+    },
+
+    /// Export data (requires existing data file)
+    Export {
+        /// Format: csv or json
+        format: String,
+        #[arg(short, long)]
+        output: String,
     },
 }
 
@@ -301,6 +332,92 @@ fn main() -> anyhow::Result<()> {
             let deriv = calculus::numerical_derivative(f, x, 0.0001);
             println!("Numerical Derivative:");
             println!("  f'({}) ≈ {}", x, deriv);
+        }
+
+        Commands::Practice { topic, difficulty, count } => {
+            let diff = match difficulty.to_lowercase().as_str() {
+                "easy" => Difficulty::Easy,
+                "medium" => Difficulty::Medium,
+                "hard" => Difficulty::Hard,
+                _ => {
+                    println!("Invalid difficulty. Using 'easy'.");
+                    Difficulty::Easy
+                }
+            };
+
+            let mut manager = PracticeManager::new();
+            manager.generate_problems(&topic, diff, count);
+
+            println!("\n📚 Generated {} {} problems (difficulty: {})\n", count, topic, difficulty);
+
+            for (i, problem) in manager.problems.iter().enumerate() {
+                println!("Problem {}:", i + 1);
+                println!("  {}", problem.question);
+                println!("  Answer: {}", problem.answer);
+                println!("  Hints: {}", problem.hints.len());
+                println!();
+            }
+        }
+
+        Commands::Progress { topic } => {
+            println!("\n📊 Learning Progress\n");
+            println!("Note: This displays example progress data.");
+            println!("In a full implementation, this would load from saved data.\n");
+
+            if let Some(t) = topic {
+                println!("Topic: {}", t);
+                println!("  Total Problems: 10");
+                println!("  Solved: 7");
+                println!("  Accuracy: 70.0%");
+                println!("  Current Streak: 3");
+            } else {
+                println!("Overall Statistics:");
+                println!("  Total Problems: 25");
+                println!("  Solved: 18");
+                println!("  Overall Accuracy: 72.0%");
+                println!("  Total Study Time: 45 minutes");
+            }
+        }
+
+        Commands::WrongAnswers { topic } => {
+            println!("\n📝 Wrong Answer Notebook\n");
+            println!("Note: This displays example wrong answer data.");
+            println!("In a full implementation, this would load from saved data.\n");
+
+            if let Some(t) = topic {
+                println!("Wrong answers for topic: {}", t);
+                println!("  Total: 3");
+                println!("  Mastered: 1");
+                println!("  Still reviewing: 2");
+            } else {
+                println!("All Wrong Answers:");
+                println!("  Total: 7");
+                println!("  Mastered: 4");
+                println!("  Still reviewing: 3");
+                println!("\nTopics needing review:");
+                println!("  - linear_equation: 2 problems");
+                println!("  - quadratic_equation: 1 problem");
+            }
+        }
+
+        Commands::Export { format, output } => {
+            println!("\n💾 Data Export\n");
+
+            match format.to_lowercase().as_str() {
+                "csv" => {
+                    println!("Exporting to CSV: {}", output);
+                    println!("Note: In a full implementation, this would export actual data.");
+                    println!("Example data would be written to the file.");
+                }
+                "json" => {
+                    println!("Exporting to JSON: {}", output);
+                    println!("Note: In a full implementation, this would export actual data.");
+                    println!("Example data would be written to the file.");
+                }
+                _ => {
+                    println!("Error: Invalid format '{}'. Use 'csv' or 'json'.", format);
+                }
+            }
         }
     }
 

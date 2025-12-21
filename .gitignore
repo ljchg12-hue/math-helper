@@ -64,6 +64,18 @@ target/
 math_helper_rust/
 math_helper_tauri/
 
+# Rust
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# Learning data
+*.json
+*.csv
+*.yaml
+!examples/**/*.json
+!examples/**/*.csv
+
 # Temporary files
 *.tmp
 *.temp

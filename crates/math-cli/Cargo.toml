@@ -7,6 +7,7 @@ license.workspace = true
 
 [dependencies]
 math-core = { path = "../math-core" }
+math-features = { path = "../math-features" }
 clap.workspace = true
 anyhow.workspace = true
 serde_json.workspace = true
