@@ -232,6 +232,7 @@ export default function UniversalCalculator() {
             <button
               key={m.id}
               onClick={() => {
+                console.log('[MODE] 모드 변경:', mode, '→', m.id, m.label)
                 setMode(m.id)
                 setInput('')
                 setResult(null)
@@ -253,6 +254,9 @@ export default function UniversalCalculator() {
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
             수식 입력
+            <span className="ml-2 text-xs font-bold text-blue-600">
+              [현재 모드: {currentMode.label}]
+            </span>
             <span className="ml-2 text-xs text-gray-500">
               예: {currentMode.example}
             </span>

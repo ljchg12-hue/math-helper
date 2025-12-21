@@ -9,7 +9,10 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false,  // ✅ sandbox 비활성화 (preload에서 node_modules 접근 허용)
+      sandbox: false,  // ✅ sandbox 비활성화
+      enableRemoteModule: false,
+      nodeIntegrationInWorker: false,
+      nodeIntegrationInSubFrames: false,
       preload: path.join(__dirname, 'preload.js')
     }
   })
