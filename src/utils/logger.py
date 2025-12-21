@@ -4,6 +4,7 @@
 """
 import logging
 import sys
+import os
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
@@ -27,11 +28,23 @@ class MathHelperLogger:
             return
 
         self._logger = logging.getLogger("MathHelper")
-        self._logger.setLevel(logging.DEBUG)
 
-        # 로그 디렉토리 생성
-        log_dir = Path(__file__).parent.parent.parent / "logs"
-        log_dir.mkdir(exist_ok=True)
+        # 보안 강화: 프로덕션에서는 INFO 레벨 (DEBUG 비활성화)
+        # 개발 모드는 DEV_MODE 환경변수로 활성화
+        if os.environ.get('DEV_MODE', '').lower() in ('1', 'true', 'yes'):
+            self._logger.setLevel(logging.DEBUG)
+        else:
+            self._logger.setLevel(logging.INFO)
+
+        # 로그 디렉토리 생성 (사용자 홈 디렉토리 기준)
+        # Windows: %APPDATA%\MathHelper\logs
+        # Linux/Mac: ~/.math_helper/logs
+        if sys.platform == 'win32':
+            log_dir = Path(os.environ.get('APPDATA', os.path.expanduser('~'))) / 'MathHelper' / 'logs'
+        else:
+            log_dir = Path.home() / '.math_helper' / 'logs'
+
+        log_dir.mkdir(parents=True, exist_ok=True)
 
         # 파일 핸들러 (날짜별 로그 파일)
         today = datetime.now().strftime("%Y%m%d")
@@ -43,6 +56,14 @@ class MathHelperLogger:
             '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s'
         )
         file_handler.setFormatter(file_formatter)
+
+        # 보안 강화: 로그 파일 권한 제한 (소유자만 읽기/쓰기)
+        try:
+            import stat
+            log_file.chmod(stat.S_IRUSR | stat.S_IWUSR)  # 0o600
+        except Exception:
+            # Windows에서는 chmod가 제한적으로 작동하므로 무시
+            pass
 
         # 콘솔 핸들러
         console_handler = logging.StreamHandler(sys.stdout)

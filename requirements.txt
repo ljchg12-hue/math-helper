@@ -1,18 +1,19 @@
 # Math Helper 프로덕션 의존성
 # Python 3.8 이상 필요
+# 보안 강화: 버전 고정 (재현 가능성 + 보안)
 
 # 웹 프레임워크
-streamlit>=1.28.0
+streamlit==1.39.0
 
 # 데이터 처리 (향후 확장용)
-pandas>=2.0.0
+pandas==2.2.3
 
 # 수치 계산
-numpy>=1.24.0
+numpy==1.26.4
 
 # 시각화
-matplotlib>=3.7.0
-plotly>=5.17.0
+matplotlib==3.9.3
+plotly==5.24.1
 
 # 설정 파일 파싱
-pyyaml>=6.0
+pyyaml==6.0.2

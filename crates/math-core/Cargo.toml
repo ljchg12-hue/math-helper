@@ -1,0 +1,29 @@
+[package]
+name = "math-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+num.workspace = true
+num-rational.workspace = true
+num-complex.workspace = true
+num-integer.workspace = true
+approx.workspace = true
+ndarray.workspace = true
+statrs.workspace = true
+primes.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+regex.workspace = true
+rand.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+approx.workspace = true
+
+[[bench]]
+name = "calculators"
+harness = false

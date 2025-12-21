@@ -39,8 +39,11 @@ function createWindow() {
     height: 800,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      nodeIntegration: false,
-      contextIsolation: true
+      nodeIntegration: false,       // ✅ 보안: Node.js 통합 비활성화
+      contextIsolation: true,        // ✅ 보안: 컨텍스트 격리
+      webSecurity: true,             // ✅ 보안: 웹 보안 활성화
+      allowRunningInsecureContent: false,  // ✅ 보안: 비보안 컨텐츠 차단
+      sandbox: true                  // ✅ 보안: 샌드박스 활성화
     },
     icon: path.join(__dirname, 'build', 'icon.png')
   });
@@ -53,10 +56,45 @@ function createWindow() {
   // Streamlit 서버 시작 후 로드
   startPythonServer();
 
-  // Streamlit 서버가 시작될 때까지 대기 (3초)
-  setTimeout(() => {
-    mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
-  }, 3000);
+  // Streamlit 서버 준비 확인 (폴링 방식)
+  const checkServerReady = async () => {
+    const http = require('http');
+    const maxRetries = 30; // 최대 30초 대기
+    let retries = 0;
+
+    const checkConnection = () => {
+      return new Promise((resolve) => {
+        const req = http.get('http://localhost:8501', (res) => {
+          resolve(true);
+        });
+        req.on('error', () => {
+          resolve(false);
+        });
+        req.setTimeout(1000);
+      });
+    };
+
+    while (retries < maxRetries) {
+      const isReady = await checkConnection();
+      if (isReady) {
+        console.log(`Server ready after ${retries} seconds`);
+        mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+        return;
+      }
+      retries++;
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    console.error('Server failed to start after 30 seconds');
+    // 에러 다이얼로그 표시
+    const { dialog } = require('electron');
+    dialog.showErrorBox(
+      'Server Start Failed',
+      'Python server failed to start. Please check if Python and required packages are installed.'
+    );
+  };
+
+  checkServerReady();
 
   mainWindow.on('closed', function () {
     mainWindow = null;

@@ -8,6 +8,7 @@ from typing import List, Dict, Any
 from pathlib import Path
 from datetime import datetime
 from ..utils.logger import get_logger
+from ..utils.validation import sanitize_filename
 
 logger = get_logger()
 
@@ -22,15 +23,25 @@ class DataExporter:
 
         Args:
             data: 내보낼 데이터
-            filepath: 저장 경로
+            filepath: 저장 경로 (자동으로 sanitize됨)
 
         Returns:
             성공 여부
         """
         try:
-            with open(filepath, 'w', encoding='utf-8') as f:
+            # 보안 강화: 파일명 sanitization
+            path = Path(filepath)
+            safe_filename = sanitize_filename(path.name)
+
+            # 안전한 디렉토리 설정 (사용자 홈 디렉토리)
+            safe_dir = Path.home() / '.math_helper' / 'exports'
+            safe_dir.mkdir(parents=True, exist_ok=True)
+
+            safe_filepath = safe_dir / safe_filename
+
+            with open(safe_filepath, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
-            logger.info(f"JSON 내보내기 성공: {filepath}")
+            logger.info(f"JSON 내보내기 성공: {safe_filepath}")
             return True
         except Exception as e:
             logger.error(f"JSON 내보내기 실패: {e}")
@@ -67,7 +78,7 @@ class DataExporter:
 
         Args:
             data: 딕셔너리 리스트
-            filepath: 저장 경로
+            filepath: 저장 경로 (자동으로 sanitize됨)
             fieldnames: 컬럼 이름 (None이면 첫 번째 항목의 키 사용)
 
         Returns:
@@ -81,12 +92,22 @@ class DataExporter:
             if fieldnames is None:
                 fieldnames = list(data[0].keys())
 
-            with open(filepath, 'w', newline='', encoding='utf-8-sig') as f:
+            # 보안 강화: 파일명 sanitization
+            path = Path(filepath)
+            safe_filename = sanitize_filename(path.name)
+
+            # 안전한 디렉토리 설정
+            safe_dir = Path.home() / '.math_helper' / 'exports'
+            safe_dir.mkdir(parents=True, exist_ok=True)
+
+            safe_filepath = safe_dir / safe_filename
+
+            with open(safe_filepath, 'w', newline='', encoding='utf-8-sig') as f:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(data)
 
-            logger.info(f"CSV 내보내기 성공: {filepath}")
+            logger.info(f"CSV 내보내기 성공: {safe_filepath}")
             return True
         except Exception as e:
             logger.error(f"CSV 내보내기 실패: {e}")

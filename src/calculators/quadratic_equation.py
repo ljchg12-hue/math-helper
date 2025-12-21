@@ -9,6 +9,25 @@ from ..utils.logger import get_logger
 
 logger = get_logger()
 
+# 부동소수점 비교를 위한 엡실론 값
+EPSILON = 1e-10
+
+
+def validate_nums(*values, param_names=None):
+    """간단한 숫자 검증"""
+    if param_names is None:
+        param_names = [f'값{i+1}' for i in range(len(values))]
+
+    for val, name in zip(values, param_names):
+        if not isinstance(val, (int, float)):
+            return False, f"{name}는 숫자여야 합니다.", None
+        if math.isnan(val):
+            return False, f"{name}에 NaN이 입력되었습니다.", None
+        if math.isinf(val):
+            return False, f"{name}에 무한대가 입력되었습니다.", None
+
+    return True, "", tuple(float(v) for v in values)
+
 
 @dataclass
 class QuadraticSolution:
@@ -43,15 +62,25 @@ class QuadraticEquationSolver:
         Returns:
             QuadraticSolution 객체
         """
-        logger.debug(f"이차방정식 풀이: {a}x² + {b}x + {c} = 0")
+        # 보안 강화: 입력 검증
+        is_valid, error_msg, validated = validate_nums(
+            a, b, c,
+            param_names=['a (x²의 계수)', 'b (x의 계수)', 'c (상수항)']
+        )
+        if not is_valid:
+            logger.error(f"계수 검증 실패: {error_msg}")
+            raise ValueError(error_msg)
+
+        a, b, c = validated
+        logger.debug(f"이차방정식 풀이 시작")
 
         steps = []
         steps.append(f"주어진 방정식: {self._format_equation(a, b, c)}")
 
         # a가 0이면 일차방정식
-        if a == 0:
-            if b == 0:
-                if c == 0:
+        if math.isclose(a, 0, abs_tol=EPSILON):
+            if math.isclose(b, 0, abs_tol=EPSILON):
+                if math.isclose(c, 0, abs_tol=EPSILON):
                     steps.append("0 = 0 (항등식)")
                     return QuadraticSolution('identity', steps=steps)
                 else:
@@ -71,10 +100,10 @@ class QuadraticEquationSolver:
         steps.append(f"D = {D}")
 
         # 판별식에 따른 해의 개수
-        if D > 0:
+        if D > EPSILON:
             steps.append("\nD > 0이므로 서로 다른 두 실근을 가집니다.")
             return self._solve_two_real_roots(a, b, c, D, steps)
-        elif D == 0:
+        elif math.isclose(D, 0, abs_tol=EPSILON):
             steps.append("\nD = 0이므로 중근을 가집니다.")
             return self._solve_one_real_root(a, b, steps)
         else:

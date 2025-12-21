@@ -2,11 +2,31 @@
 일차방정식 풀이 모듈
 ax + b = c 형태의 일차방정식을 풉니다.
 """
+import math
 from typing import Tuple, List, Union, Optional
 from dataclasses import dataclass
 from ..utils.logger import get_logger
 
 logger = get_logger()
+
+# 부동소수점 비교를 위한 엡실론 값
+EPSILON = 1e-10
+
+
+def validate_nums(*values, param_names=None):
+    """간단한 숫자 검증"""
+    if param_names is None:
+        param_names = [f'값{i+1}' for i in range(len(values))]
+
+    for val, name in zip(values, param_names):
+        if not isinstance(val, (int, float)):
+            return False, f"{name}는 숫자여야 합니다.", None
+        if math.isnan(val):
+            return False, f"{name}에 NaN이 입력되었습니다.", None
+        if math.isinf(val):
+            return False, f"{name}에 무한대가 입력되었습니다.", None
+
+    return True, "", tuple(float(v) for v in values)
 
 
 @dataclass
@@ -35,7 +55,12 @@ class LinearEquationSolver:
         c: Union[int, float]
     ) -> Tuple[bool, str]:
         """
-        계수 검증
+        계수 검증 (보안 강화)
+
+        보안 체크:
+        - 타입 검증
+        - 범위 검증 (DoS 공격 방지)
+        - NaN/Infinity 검증
 
         Args:
             a: x의 계수
@@ -45,14 +70,15 @@ class LinearEquationSolver:
         Returns:
             (검증 성공 여부, 에러 메시지)
         """
-        try:
-            float(a)
-            float(b)
-            float(c)
-            return True, ""
-        except (ValueError, TypeError) as e:
-            logger.error(f"계수 검증 실패: {e}")
-            return False, "유효한 숫자를 입력해주세요."
+        is_valid, error_msg, _ = validate_nums(
+            a, b, c,
+            param_names=['a (x의 계수)', 'b (좌변 상수)', 'c (우변 상수)']
+        )
+
+        if not is_valid:
+            logger.error(f"계수 검증 실패: {error_msg}")
+
+        return is_valid, error_msg
 
     def solve(
         self,
@@ -79,8 +105,10 @@ class LinearEquationSolver:
         if not is_valid:
             raise ValueError(error_msg)
 
-        a, b, c = float(a), float(b), float(c)
-        logger.debug(f"일차방정식 풀이 시작: {a}x + {b} = {c}")
+        # 보안 강화: 검증된 값 사용
+        _, _, validated = validate_nums(a, b, c, param_names=['a', 'b', 'c'])
+        a, b, c = validated
+        logger.debug(f"일차방정식 풀이 시작")
 
         steps = []
         steps.append(f"주어진 방정식: {self._format_equation(a, b, c)}")
@@ -95,8 +123,8 @@ class LinearEquationSolver:
         steps.append(f"   {a}x = {rhs}")
 
         # 3단계: 해 구하기
-        if a == 0:
-            if rhs == 0:
+        if math.isclose(a, 0, abs_tol=EPSILON):
+            if math.isclose(rhs, 0, abs_tol=EPSILON):
                 steps.append("3. 결과: 0 = 0 (항등식)")
                 steps.append("   해가 무수히 많습니다 (부정)")
                 logger.info("해가 무수히 많음 (부정)")

@@ -2,11 +2,28 @@
 연립방정식 풀이 모듈
 두 개의 일차방정식으로 이루어진 연립방정식을 풉니다.
 """
+import math
 from typing import Tuple, Optional
 from dataclasses import dataclass
 from ..utils.logger import get_logger
 
 logger = get_logger()
+
+
+def validate_nums(*values, param_names=None):
+    """간단한 숫자 검증"""
+    if param_names is None:
+        param_names = [f'값{i+1}' for i in range(len(values))]
+
+    for val, name in zip(values, param_names):
+        if not isinstance(val, (int, float)):
+            return False, f"{name}는 숫자여야 합니다.", None
+        if math.isnan(val):
+            return False, f"{name}에 NaN이 입력되었습니다.", None
+        if math.isinf(val):
+            return False, f"{name}에 무한대가 입력되었습니다.", None
+
+    return True, "", tuple(float(v) for v in values)
 
 
 @dataclass
@@ -47,7 +64,17 @@ class SimultaneousEquationsSolver:
         Returns:
             SimultaneousSolution 객체
         """
-        logger.debug(f"가감법: {a1}x + {b1}y = {c1}, {a2}x + {b2}y = {c2}")
+        # 보안 강화: 입력 검증
+        is_valid, error_msg, validated = validate_nums(
+            a1, b1, c1, a2, b2, c2,
+            param_names=['a1', 'b1', 'c1', 'a2', 'b2', 'c2']
+        )
+        if not is_valid:
+            logger.error(f"계수 검증 실패: {error_msg}")
+            raise ValueError(error_msg)
+
+        a1, b1, c1, a2, b2, c2 = validated
+        logger.debug(f"가감법 풀이 시작")
 
         steps = []
         steps.append(f"주어진 연립방정식:")
@@ -135,7 +162,17 @@ class SimultaneousEquationsSolver:
         Returns:
             SimultaneousSolution 객체
         """
-        logger.debug(f"대입법: {a1}x + {b1}y = {c1}, {a2}x + {b2}y = {c2}")
+        # 보안 강화: 입력 검증
+        is_valid, error_msg, validated = validate_nums(
+            a1, b1, c1, a2, b2, c2,
+            param_names=['a1', 'b1', 'c1', 'a2', 'b2', 'c2']
+        )
+        if not is_valid:
+            logger.error(f"계수 검증 실패: {error_msg}")
+            raise ValueError(error_msg)
+
+        a1, b1, c1, a2, b2, c2 = validated
+        logger.debug(f"대입법 풀이 시작")
 
         steps = []
         steps.append(f"주어진 연립방정식:")

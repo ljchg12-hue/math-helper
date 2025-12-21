@@ -10,6 +10,17 @@ from ..utils.logger import get_logger
 logger = get_logger()
 
 
+def validate_numeric_input(value, name):
+    """간단한 숫자 검증"""
+    if not isinstance(value, (int, float)):
+        return False, f"{name}는 숫자여야 합니다.", None
+    if math.isnan(value):
+        return False, f"{name}에 NaN이 입력되었습니다.", None
+    if math.isinf(value):
+        return False, f"{name}에 무한대가 입력되었습니다.", None
+    return True, "", float(value)
+
+
 @dataclass
 class GeometryResult:
     """기하 계산 결과 클래스"""
@@ -42,7 +53,15 @@ class GeometryCalculator:
         Returns:
             GeometryResult 객체
         """
-        logger.debug(f"피타고라스 정리: a={a}, b={b}, c={c}")
+        # 보안 강화: 입력 검증 (None이 아닌 값만)
+        for value, name in [(a, 'a'), (b, 'b'), (c, 'c')]:
+            if value is not None:
+                is_valid, error_msg, _ = validate_numeric_input(value, name)
+                if not is_valid:
+                    logger.error(f"입력 검증 실패: {error_msg}")
+                    raise ValueError(error_msg)
+
+        logger.debug("피타고라스 정리 계산")
 
         steps = []
         steps.append("피타고라스 정리: a² + b² = c²")
@@ -106,7 +125,13 @@ class GeometryCalculator:
 
     def triangle_area(self, base: float, height: float) -> GeometryResult:
         """삼각형 넓이: (밑변 × 높이) / 2"""
-        logger.debug(f"삼각형 넓이: 밑변={base}, 높이={height}")
+        # 보안 강화: 입력 검증
+        for value, name in [(base, '밑변'), (height, '높이')]:
+            is_valid, error_msg, _ = validate_numeric_input(value, name)
+            if not is_valid:
+                raise ValueError(error_msg)
+
+        logger.debug("삼각형 넓이 계산")
 
         steps = []
         steps.append("삼각형 넓이 = (밑변 × 높이) / 2")
@@ -178,7 +203,12 @@ class GeometryCalculator:
 
     def circle_area(self, radius: float) -> GeometryResult:
         """원의 넓이: π × r²"""
-        logger.debug(f"원의 넓이: 반지름={radius}")
+        # 보안 강화: 입력 검증
+        is_valid, error_msg, _ = validate_numeric_input(radius, '반지름')
+        if not is_valid:
+            raise ValueError(error_msg)
+
+        logger.debug("원의 넓이 계산")
 
         steps = []
         steps.append("원의 넓이 = π × r²")
