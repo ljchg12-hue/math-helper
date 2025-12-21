@@ -1,11 +1,34 @@
-const { contextBridge } = require('electron')
-const { create, all } = require('mathjs')
-const nerdamer = require('nerdamer')
-require('nerdamer/Solve')
-require('nerdamer/Algebra')
-require('nerdamer/Calculus')
+// ============================================
+// 수학 엔진 로딩 및 에러 핸들링
+// ============================================
+console.log('[Preload] Starting math engine initialization...')
 
-const math = create(all)
+let math, nerdamer
+let initError = null
+
+try {
+  const { contextBridge } = require('electron')
+  console.log('[Preload] Electron contextBridge loaded')
+
+  const mathjs = require('mathjs')
+  console.log('[Preload] mathjs loaded')
+
+  nerdamer = require('nerdamer')
+  console.log('[Preload] nerdamer loaded')
+
+  require('nerdamer/Solve')
+  require('nerdamer/Algebra')
+  require('nerdamer/Calculus')
+  console.log('[Preload] nerdamer plugins loaded')
+
+  const { create, all } = mathjs
+  math = create(all)
+  console.log('[Preload] Math engine initialized successfully')
+} catch (error) {
+  initError = error
+  console.error('[Preload] Math engine initialization FAILED:', error)
+  console.error('[Preload] Error stack:', error.stack)
+}
 
 // ============================================
 // 1. 범용 계산 (MathJS)
@@ -501,24 +524,50 @@ function calculateLimit(expr, variable, approach, direction = 'both') {
 // ============================================
 // contextBridge로 노출
 // ============================================
-contextBridge.exposeInMainWorld('mathAPI', {
-  // 기본 계산
-  evaluate: evaluateExpression,
+try {
+  const { contextBridge } = require('electron')
 
-  // 방정식/식 조작
-  solve: solveEquation,
-  simplify: simplifyExpression,
-  factor: factorExpression,
-  expand: expandExpression,
+  if (initError) {
+    // 초기화 실패 시 에러 함수 제공
+    console.error('[Preload] Exposing error handlers due to init failure')
+    contextBridge.exposeInMainWorld('mathAPI', {
+      evaluate: () => ({ success: false, error: `수학 엔진 로드 실패: ${initError.message}` }),
+      solve: () => ({ success: false, error: `수학 엔진 로드 실패: ${initError.message}` }),
+      simplify: () => ({ success: false, error: `수학 엔진 로드 실패: ${initError.message}` }),
+      factor: () => ({ success: false, error: `수학 엔진 로드 실패: ${initError.message}` }),
+      expand: () => ({ success: false, error: `수학 엔진 로드 실패: ${initError.message}` }),
+      differentiate: () => ({ success: false, error: `수학 엔진 로드 실패: ${initError.message}` }),
+      integrate: () => ({ success: false, error: `수학 엔진 로드 실패: ${initError.message}` }),
+      limit: () => ({ success: false, error: `수학 엔진 로드 실패: ${initError.message}` }),
+      matrix: () => ({ success: false, error: `수학 엔진 로드 실패: ${initError.message}` }),
+      statistics: () => ({ success: false, error: `수학 엔진 로드 실패: ${initError.message}` })
+    })
+  } else {
+    // 정상 초기화 시 실제 함수 제공
+    console.log('[Preload] Exposing mathAPI to main world')
+    contextBridge.exposeInMainWorld('mathAPI', {
+      // 기본 계산
+      evaluate: evaluateExpression,
 
-  // 미적분
-  differentiate,
-  integrate,
-  limit: calculateLimit,
+      // 방정식/식 조작
+      solve: solveEquation,
+      simplify: simplifyExpression,
+      factor: factorExpression,
+      expand: expandExpression,
 
-  // 행렬
-  matrix: matrixCalculate,
+      // 미적분
+      differentiate,
+      integrate,
+      limit: calculateLimit,
 
-  // 통계
-  statistics: calculateStatistics
-})
+      // 행렬
+      matrix: matrixCalculate,
+
+      // 통계
+      statistics: calculateStatistics
+    })
+    console.log('[Preload] mathAPI exposed successfully')
+  }
+} catch (error) {
+  console.error('[Preload] Failed to expose mathAPI:', error)
+}

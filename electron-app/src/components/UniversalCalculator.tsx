@@ -105,10 +105,13 @@ export default function UniversalCalculator() {
 
     // ✅ Phase 1: mathAPI 존재 확인
     if (!window.mathAPI) {
-      setError('시스템 오류: 수학 엔진을 로드할 수 없습니다. 앱을 재시작해주세요.')
+      console.error('[Calculator] window.mathAPI is undefined!')
+      console.error('[Calculator] window keys:', Object.keys(window))
+      setError('시스템 오류: 수학 엔진을 로드할 수 없습니다. 개발자 도구(F12)에서 콘솔을 확인하세요.')
       setIsCalculating(false)
       return
     }
+    console.log('[Calculator] mathAPI found:', typeof window.mathAPI)
 
     if (!input.trim()) {
       setError('수식을 입력하세요')

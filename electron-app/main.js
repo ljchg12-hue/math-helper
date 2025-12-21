@@ -9,6 +9,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: false,  // ✅ sandbox 비활성화 (preload에서 node_modules 접근 허용)
       preload: path.join(__dirname, 'preload.js')
     }
   })
@@ -18,6 +19,8 @@ function createWindow() {
     win.webContents.openDevTools()
   } else {
     win.loadFile('dist/index.html')
+    // 프로덕션에서도 개발자 도구 열기 (디버깅용)
+    win.webContents.openDevTools()
   }
 }
 
