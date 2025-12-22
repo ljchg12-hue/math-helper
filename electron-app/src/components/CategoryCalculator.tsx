@@ -10,7 +10,12 @@ interface Category {
   description: string
 }
 
-export default function CategoryCalculator() {
+interface CategoryCalculatorProps {
+  initialInput?: string
+  onInputUsed?: () => void
+}
+
+export default function CategoryCalculator({ initialInput, onInputUsed }: CategoryCalculatorProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
   const categories: Category[] = [
@@ -208,7 +213,11 @@ export default function CategoryCalculator() {
       </Card>
 
       {/* 범용 계산기 */}
-      <UniversalCalculator />
+      <UniversalCalculator
+        key={selectedCategory}
+        initialInput={initialInput}
+        onInputUsed={onInputUsed}
+      />
     </div>
   )
 }

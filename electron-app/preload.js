@@ -31,10 +31,53 @@ try {
 }
 
 // ============================================
+// 0. 입력 검증 헬퍼 (보안 + 성능)
+// ============================================
+function validateInput(expr, maxLength = 1000) {
+  // ✅ HIGH #3: 입력 길이 제한 (DoS 방지)
+  if (!expr || typeof expr !== 'string') {
+    throw new Error('입력이 유효하지 않습니다')
+  }
+  if (expr.length > maxLength) {
+    throw new Error(`입력이 너무 깁니다 (최대 ${maxLength}자)`)
+  }
+
+  // ✅ HIGH #3: 위험한 문자 차단 (XSS, 코드 인젝션 방지)
+  const dangerousPatterns = [
+    /<script/i,
+    /javascript:/i,
+    /on\w+\s*=/i, // onclick=, onerror= 등
+    /eval\s*\(/i,
+    /Function\s*\(/i,
+    /require\s*\(/i,
+    /import\s+/i,
+    /export\s+/i
+  ]
+
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(expr)) {
+      throw new Error('허용되지 않는 문자가 포함되어 있습니다')
+    }
+  }
+
+  // ✅ MEDIUM #7: 복잡도 제한 (성능 최적화)
+  const trimmed = expr.trim()
+  const complexity = (trimmed.match(/[\+\-\*\/\^\(\)]/g) || []).length
+  if (complexity > 200) {
+    throw new Error('수식이 너무 복잡합니다. 더 간단한 수식으로 나누어 계산해주세요.')
+  }
+
+  return trimmed
+}
+
+// ============================================
 // 1. 범용 계산 (MathJS)
 // ============================================
 function evaluateExpression(expr) {
   try {
+    // ✅ HIGH #3: 입력 검증
+    expr = validateInput(expr)
+
     // ✅ Phase 2 Items 13-14: Edge case validation
     const exprLower = expr.toLowerCase()
 
@@ -72,7 +115,7 @@ function evaluateExpression(expr) {
     if (typeof result === 'number' && (!isFinite(result) || isNaN(result))) {
       return {
         success: false,
-        error: '계산 결과가 유효하지 않습니다 (무한대 또는 NaN)'
+        error: '계산 결과가 너무 크거나 정의되지 않습니다. 수식을 확인해주세요.'
       }
     }
 
@@ -111,9 +154,16 @@ function evaluateExpression(expr) {
       ]
     }
   } catch (error) {
+    // ✅ MEDIUM #6: 사용자 친화적 에러 메시지
+    const userMessage = error.message
+      .replace(/Invalid left hand side of assignment operator/i, '등호(=)는 방정식 모드에서만 사용할 수 있습니다')
+      .replace(/Unexpected token/i, '수식 형식이 올바르지 않습니다')
+      .replace(/Undefined symbol/i, '알 수 없는 기호가 포함되어 있습니다')
+      .replace(/Dimension mismatch/i, '행렬 크기가 맞지 않습니다')
+
     return {
       success: false,
-      error: error.message
+      error: userMessage.length > 100 ? '계산할 수 없습니다. 수식을 확인해주세요.' : userMessage
     }
   }
 }
@@ -123,6 +173,10 @@ function evaluateExpression(expr) {
 // ============================================
 function solveEquation(equation, variable = 'x') {
   try {
+    // ✅ HIGH #3: 입력 검증
+    equation = validateInput(equation)
+    variable = validateInput(variable, 1) // 변수명은 1글자만
+
     // "2x + 3 = 7" → "2x + 3 - (7)"
     let expr = equation.trim()
 
@@ -149,6 +203,40 @@ function solveEquation(equation, variable = 'x') {
         return sol.toString()
       }
     })
+
+    // ✅ HIGH #1: 항등식/모순 처리
+    if (results.length === 0 || (results.length === 1 && results[0] === '')) {
+      // 빈 해 → 항등식 또는 모순 판단
+      try {
+        // 좌변 = 우변인지 확인 (항등식)
+        const simplified = nerdamer(expr).toString()
+        if (simplified === '0' || simplified === 'null') {
+          return {
+            success: true,
+            solutions: [],
+            variable,
+            original: equation,
+            steps: [
+              `원래 방정식: ${equation}`,
+              `결과: 항등식 (모든 ${variable} 값이 해)`,
+              '설명: 좌변과 우변이 항상 같습니다'
+            ],
+            isIdentity: true
+          }
+        } else {
+          return {
+            success: false,
+            error: `모순된 방정식입니다 (해가 없음)`,
+            isContradiction: true
+          }
+        }
+      } catch {
+        return {
+          success: false,
+          error: '방정식을 풀 수 없습니다'
+        }
+      }
+    }
 
     // 풀이 과정 생성
     const steps = [
@@ -224,7 +312,7 @@ function integrate(expr, variable = 'x', definite = false, lower = null, upper =
       if ((lowerNum <= 0 && upperNum >= 0) || lowerNum === 0 || upperNum === 0) {
         return {
           success: false,
-          error: '∫1/x는 0을 포함하는 구간에서 발산합니다'
+          error: '0을 포함하는 구간에서는 1/x를 적분할 수 없습니다.'
         }
       }
     }
@@ -240,7 +328,7 @@ function integrate(expr, variable = 'x', definite = false, lower = null, upper =
       if (result.includes('Infinity') || result.includes('undefined') || result.includes('NaN')) {
         return {
           success: false,
-          error: '적분이 발산하거나 정의되지 않습니다'
+          error: '이 구간에서 적분할 수 없습니다. 적분 범위를 확인해주세요.'
         }
       }
 
@@ -482,15 +570,15 @@ function calculateLimit(expr, variable, approach, direction = 'both') {
     if (isNaN(approachNum)) {
       // 무한대로 접근
       if (approach === 'infinity' || approach === 'inf') {
-        // x → ∞일 때 근사
-        const largeValue = 1000000
+        // ✅ HIGH #2: 무한대 근사값 정확도 개선 (1000000 → 1e9)
+        const largeValue = 1e9
         result = nerdamer(expr).evaluate({[variable]: largeValue}).text()
       } else {
         throw new Error('접근값이 올바르지 않습니다')
       }
     } else {
-      // 특정 값으로 접근
-      const epsilon = 0.0001
+      // ✅ HIGH #2: epsilon 정확도 개선 (0.0001 → 1e-6)
+      const epsilon = 1e-6
 
       if (direction === 'left' || direction === 'both') {
         const leftVal = nerdamer(expr).evaluate({[variable]: approachNum - epsilon}).text()
@@ -498,7 +586,11 @@ function calculateLimit(expr, variable, approach, direction = 'both') {
           result = leftVal
         } else {
           const rightVal = nerdamer(expr).evaluate({[variable]: approachNum + epsilon}).text()
-          result = leftVal === rightVal ? leftVal : `좌극한: ${leftVal}, 우극한: ${rightVal}`
+          // ✅ HIGH #2: 좌우극한 비교 시 부동소수점 오차 고려
+          const leftNum = parseFloat(leftVal)
+          const rightNum = parseFloat(rightVal)
+          const converged = !isNaN(leftNum) && !isNaN(rightNum) && Math.abs(leftNum - rightNum) < epsilon * 10
+          result = converged ? leftVal : `좌극한: ${leftVal}, 우극한: ${rightVal}`
         }
       } else {
         result = nerdamer(expr).evaluate({[variable]: approachNum + epsilon}).text()

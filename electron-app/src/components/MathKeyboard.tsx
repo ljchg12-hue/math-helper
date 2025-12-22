@@ -92,20 +92,20 @@ export default function MathKeyboard({ onInput, onClear, onBackspace }: MathKeyb
 
     switch (variant) {
       case 'number':
-        return `${base} bg-white hover:bg-gray-50 border-2 border-gray-200 text-gray-900`
+        return `${base} bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border-2 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100`
       case 'operator':
-        return `${base} bg-blue-500 hover:bg-blue-600 text-white`
+        return `${base} bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white`
       case 'function':
-        return `${base} bg-purple-500 hover:bg-purple-600 text-white`
+        return `${base} bg-purple-500 dark:bg-purple-600 hover:bg-purple-600 dark:hover:bg-purple-700 text-white`
       case 'special':
-        return `${base} bg-gray-600 hover:bg-gray-700 text-white`
+        return `${base} bg-gray-600 dark:bg-gray-500 hover:bg-gray-700 dark:hover:bg-gray-400 text-white`
       default:
-        return `${base} bg-gray-200 hover:bg-gray-300 text-gray-900`
+        return `${base} bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100`
     }
   }
 
   return (
-    <div className="bg-gray-100 p-4 rounded-xl border-2 border-gray-200">
+    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 transition-colors">
       <div className="space-y-2">
         {keys.map((row, rowIndex) => (
           <div key={rowIndex} className="grid grid-cols-5 gap-2">
@@ -124,7 +124,7 @@ export default function MathKeyboard({ onInput, onClear, onBackspace }: MathKeyb
         ))}
       </div>
 
-      <div className="mt-3 text-xs text-gray-600 text-center">
+      <div className="mt-3 text-xs text-gray-600 dark:text-gray-400 text-center">
         <p>💡 팁: 직접 키보드로도 입력 가능</p>
       </div>
     </div>

@@ -1,32 +1,59 @@
 {
   "name": "math-helper-gui",
-  "version": "1.0.0",
+  "version": "1.0.7",
+  "description": "수학 도우미 - 수식 파서 기반 범용 계산기",
+  "author": {
+    "name": "Math Helper Team",
+    "email": "mathhelper@example.com"
+  },
+  "homepage": "https://github.com/mathhelper/app",
   "main": "main.js",
   "scripts": {
     "dev": "concurrently \"node node_modules/vite/bin/vite.js\" \"electron .\"",
     "build": "node node_modules/vite/bin/vite.js build",
     "build:win": "npm run build && node node_modules/electron-builder/out/cli/cli.js --win --x64 --dir",
-    "pack:win": "npm run build && node node_modules/electron-builder/out/cli/cli.js --win --x64"
+    "pack:win": "npm run build && node node_modules/electron-builder/out/cli/cli.js --win --x64",
+    "build:linux": "npm run build && node node_modules/electron-builder/out/cli/cli.js --linux --x64 --dir",
+    "pack:linux": "npm run build && node node_modules/electron-builder/out/cli/cli.js --linux --x64",
+    "pack": "npm run build && node node_modules/electron-builder/out/cli/cli.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.0",
+    "@vitest/ui": "^4.0.16",
     "autoprefixer": "^10.4.20",
     "concurrently": "^8.2.2",
     "electron": "^28.0.0",
     "electron-builder": "^24.9.0",
+    "happy-dom": "^20.0.11",
+    "jsdom": "^27.3.0",
+    "playwright": "^1.57.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.0",
-    "vite": "^6.0.0"
+    "vite": "^6.0.0",
+    "vitest": "^4.0.16"
   },
   "dependencies": {
+    "i18next": "^25.7.3",
     "lucide-react": "^0.460.0",
     "mathjs": "^15.1.0",
     "nerdamer": "^1.1.13",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-i18next": "^16.5.0"
   },
   "build": {
     "appId": "com.mathhelper.app",
@@ -36,11 +63,21 @@
         "portable"
       ]
     },
+    "linux": {
+      "target": [
+        "deb",
+        "tar.gz"
+      ],
+      "category": "Education"
+    },
     "files": [
       "dist/**/*",
       "main.js",
       "preload.js",
       "node_modules/**/*"
-    ]
+    ],
+    "directories": {
+      "output": "release"
+    }
   }
 }

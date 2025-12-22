@@ -4,6 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class', // ✅ Dark mode 활성화
   theme: {
     extend: {
       colors: {
