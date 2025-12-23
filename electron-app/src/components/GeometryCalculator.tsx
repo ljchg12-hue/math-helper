@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { calculatePythagorean, calculateGeometry } from '../lib/electron'
 import type { GeometryResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Input from './Input'
 import Button from './Button'
 import Card from './Card'
@@ -76,7 +77,7 @@ export default function GeometryCalculator() {
 
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }

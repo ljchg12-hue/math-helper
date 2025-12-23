@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { calculateStatistics } from '../lib/electron'
 import type { StatisticsResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Button from './Button'
 import Card from './Card'
 
@@ -26,7 +27,7 @@ export default function StatisticsCalculator() {
       const res = await calculateStatistics(numbers)
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }

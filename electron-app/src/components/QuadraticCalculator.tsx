@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { solveQuadratic } from '../lib/electron'
 import type { QuadraticResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Input from './Input'
 import Button from './Button'
 import Card from './Card'
@@ -31,7 +32,7 @@ export default function QuadraticCalculator() {
       const res = await solveQuadratic({ a: aNum, b: bNum, c: cNum })
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }

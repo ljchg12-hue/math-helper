@@ -5,6 +5,7 @@ import { HistoryItem } from '../types/history'
 import FavoriteButton from './FavoriteButton'
 import { exportToJSON, exportToCSV, downloadFile } from '../utils/exportHistory'
 import { importFromJSON, readFileAsText } from '../utils/importHistory'
+import { setItem } from '../utils/safeStorage'
 
 interface CalculationHistoryProps {
   history: HistoryItem[]
@@ -74,7 +75,7 @@ export default function CalculationHistory({
 
       if (newItems.length > 0) {
         const merged = [...newItems, ...history].slice(0, 100)
-        localStorage.setItem('calculationHistory', JSON.stringify(merged))
+        setItem('calculationHistory', merged)
         window.location.reload() // 간단한 리로드로 상태 업데이트
       }
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { calculateExponent } from '../lib/electron'
 import type { ExponentResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Input from './Input'
 import Button from './Button'
 import Card from './Card'
@@ -40,7 +41,7 @@ export default function ExponentCalculator() {
       const res = await calculateExponent(b, e, type)
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }

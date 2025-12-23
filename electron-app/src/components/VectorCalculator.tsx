@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { vectorOperation } from '../lib/electron'
 import type { VectorResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Button from './Button'
 import Card from './Card'
 
@@ -38,7 +39,7 @@ export default function VectorCalculator() {
       const res = await vectorOperation(v1, v2, operation)
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }

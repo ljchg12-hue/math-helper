@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { getItem, setItem } from '../utils/safeStorage'
 
 type Theme = 'light' | 'dark'
 
@@ -10,9 +11,8 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme
-    return savedTheme || 'light'
+  const [theme, setThemeState] = useState<Theme>(() => {
+    return getItem<Theme>('theme', { fallback: 'light' })
   })
 
   useEffect(() => {
@@ -22,11 +22,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       root.classList.remove('dark')
     }
-    localStorage.setItem('theme', theme)
+    setItem('theme', theme)
   }, [theme])
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light')
+    setThemeState(prev => prev === 'light' ? 'dark' : 'light')
   }
 
   return (

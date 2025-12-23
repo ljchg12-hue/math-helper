@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { complexOperation } from '../lib/electron'
 import type { ComplexResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Input from './Input'
 import Button from './Button'
 import Card from './Card'
@@ -34,7 +35,7 @@ export default function ComplexCalculator() {
       const res = await complexOperation(real1, imag1, real2, imag2, operation)
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }

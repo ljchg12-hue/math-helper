@@ -1,7 +1,7 @@
 {
   "name": "math-helper-gui",
-  "version": "1.0.7",
-  "description": "수학 도우미 - 수식 파서 기반 범용 계산기",
+  "version": "1.0.9",
+  "description": "수학 도우미 - 코드 품질 개선 및 안정성 강화 버전",
   "author": {
     "name": "Math Helper Team",
     "email": "mathhelper@example.com"
@@ -38,22 +38,22 @@
     "electron": "^28.0.0",
     "electron-builder": "^24.9.0",
     "happy-dom": "^20.0.11",
+    "i18next": "^25.7.3",
     "jsdom": "^27.3.0",
+    "lucide-react": "^0.460.0",
     "playwright": "^1.57.0",
     "postcss": "^8.4.47",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-i18next": "^16.5.0",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.0",
     "vite": "^6.0.0",
     "vitest": "^4.0.16"
   },
   "dependencies": {
-    "i18next": "^25.7.3",
-    "lucide-react": "^0.460.0",
     "mathjs": "^15.1.0",
-    "nerdamer": "^1.1.13",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-i18next": "^16.5.0"
+    "nerdamer": "^1.1.13"
   },
   "build": {
     "appId": "com.mathhelper.app",
@@ -74,7 +74,8 @@
       "dist/**/*",
       "main.js",
       "preload.js",
-      "node_modules/**/*"
+      "node_modules/mathjs/**",
+      "node_modules/nerdamer/**"
     ],
     "directories": {
       "output": "release"

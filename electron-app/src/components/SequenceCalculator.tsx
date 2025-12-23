@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { calculateSequence } from '../lib/electron'
 import type { SequenceResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Input from './Input'
 import Button from './Button'
 import Card from './Card'
@@ -37,7 +38,7 @@ export default function SequenceCalculator() {
       const res = await calculateSequence(type, firstTerm, difference, termNum)
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }

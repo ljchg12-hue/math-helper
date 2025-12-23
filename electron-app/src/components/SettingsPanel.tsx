@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Card from './Card'
 import ConfirmDialog from './ConfirmDialog'
+import { getItem, setItem, removeItem } from '../utils/safeStorage'
 
 type Theme = 'light' | 'dark' | 'auto'
 type FontSize = 'small' | 'medium' | 'large'
@@ -35,16 +36,16 @@ export default function SettingsPanel() {
 
   // 로컬 스토리지에서 설정 불러오기
   useEffect(() => {
-    const savedSettings = localStorage.getItem('math-helper-settings')
+    const savedSettings = getItem<Settings>('math-helper-settings')
     if (savedSettings) {
-      setSettings(JSON.parse(savedSettings))
+      setSettings(savedSettings)
     }
   }, [])
 
   // ✅ Phase 2: Auto-save (설정 변경 시 자동 저장)
   useEffect(() => {
     const timer = setTimeout(() => {
-      localStorage.setItem('math-helper-settings', JSON.stringify(settings))
+      setItem('math-helper-settings', settings)
     }, 500) // 500ms debounce
 
     return () => clearTimeout(timer)
@@ -52,7 +53,7 @@ export default function SettingsPanel() {
 
   // 설정 저장
   const handleSave = () => {
-    localStorage.setItem('math-helper-settings', JSON.stringify(settings))
+    setItem('math-helper-settings', settings)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -67,12 +68,12 @@ export default function SettingsPanel() {
       saveHistory: true,
     }
     setSettings(defaultSettings)
-    localStorage.setItem('math-helper-settings', JSON.stringify(defaultSettings))
+    setItem('math-helper-settings', defaultSettings)
   }
 
   // 히스토리 내보내기
   const handleExportHistory = () => {
-    const history = localStorage.getItem('math-helper-history') || '[]'
+    const history = JSON.stringify(getItem('math-helper-history', { fallback: [] }))
     const blob = new Blob([history], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -89,7 +90,7 @@ export default function SettingsPanel() {
       title: '계산 기록 삭제',
       message: '정말 모든 계산 기록을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
       onConfirm: () => {
-        localStorage.removeItem('math-helper-history')
+        removeItem('math-helper-history')
         setConfirmDialog({ ...confirmDialog, isOpen: false })
         setSaved(true)
         setTimeout(() => setSaved(false), 2000)

@@ -6,6 +6,7 @@ import CalculationHistory from './CalculationHistory'
 import FavoritesList from './FavoritesList'
 import { HistoryItem } from '../types/history'
 import { FavoriteItem } from '../types/favorites'
+import { getItem, setItem, removeItem } from '../utils/safeStorage'
 
 type CalculatorMode =
   | 'evaluate'    // 계산
@@ -23,6 +24,15 @@ interface Mode {
   icon: string
   example: string
   description: string
+}
+
+interface CalcResult {
+  success: boolean
+  result?: string
+  error?: string
+  solutions?: string[]
+  isIdentity?: boolean
+  steps?: string[]
 }
 
 interface UniversalCalculatorProps {
@@ -112,24 +122,12 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
 
   // ✅ 히스토리 로드 (초기화)
   useEffect(() => {
-    const savedHistory = localStorage.getItem('calculationHistory')
-    if (savedHistory) {
-      try {
-        setHistory(JSON.parse(savedHistory))
-      } catch (err) {
-        console.error('Failed to load history:', err)
-      }
-    }
+    const savedHistory = getItem<HistoryItem[]>('calculationHistory', { fallback: [] })
+    setHistory(savedHistory)
 
     // ✅ 즐겨찾기 로드
-    const savedFavorites = localStorage.getItem('calculationFavorites')
-    if (savedFavorites) {
-      try {
-        setFavorites(JSON.parse(savedFavorites))
-      } catch (err) {
-        console.error('Failed to load favorites:', err)
-      }
-    }
+    const savedFavorites = getItem<FavoriteItem[]>('calculationFavorites', { fallback: [] })
+    setFavorites(savedFavorites)
   }, [])
 
   // ✅ 공식 라이브러리에서 공식 입력 받기
@@ -148,7 +146,7 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
   }, [initialInput, onInputUsed])
 
   // ✅ 히스토리 저장
-  const saveToHistory = useCallback((resultData: any) => {
+  const saveToHistory = useCallback((resultData: CalcResult) => {
     const historyItem: HistoryItem = {
       id: `${Date.now()}-${Math.random()}`,
       timestamp: Date.now(),
@@ -169,7 +167,7 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
 
     setHistory(prev => {
       const newHistory = [historyItem, ...prev].slice(0, 100) // 최대 100개
-      localStorage.setItem('calculationHistory', JSON.stringify(newHistory))
+      setItem('calculationHistory', newHistory)
       return newHistory
     })
   }, [mode, currentMode.label, input, variable, limitValue, limitDirection, t])
@@ -190,7 +188,7 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
   const handleDeleteHistory = useCallback((id: string) => {
     setHistory(prev => {
       const newHistory = prev.filter(item => item.id !== id)
-      localStorage.setItem('calculationHistory', JSON.stringify(newHistory))
+      setItem('calculationHistory', newHistory)
       return newHistory
     })
   }, [])
@@ -198,7 +196,7 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
   // ✅ 히스토리 전체 삭제
   const handleClearHistory = useCallback(() => {
     setHistory([])
-    localStorage.removeItem('calculationHistory')
+    removeItem('calculationHistory')
   }, [])
 
   // ✅ Phase 3: 즐겨찾기 추가
@@ -211,7 +209,7 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
 
     setFavorites(prev => {
       const newFavorites = [favoriteItem, ...prev].slice(0, 50)
-      localStorage.setItem('calculationFavorites', JSON.stringify(newFavorites))
+      setItem('calculationFavorites', newFavorites)
       return newFavorites
     })
   }, [])
@@ -220,7 +218,7 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
   const handleRemoveFromFavorites = useCallback((favoriteId: string) => {
     setFavorites(prev => {
       const newFavorites = prev.filter(item => item.favoriteId !== favoriteId)
-      localStorage.setItem('calculationFavorites', JSON.stringify(newFavorites))
+      setItem('calculationFavorites', newFavorites)
       return newFavorites
     })
   }, [])
@@ -245,13 +243,10 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
 
     // ✅ Phase 1: mathAPI 존재 확인
     if (!window.mathAPI) {
-      console.error('[Calculator] window.mathAPI is undefined!')
-      console.error('[Calculator] window keys:', Object.keys(window))
       setError(t('errors.systemError'))
       setIsCalculating(false)
       return
     }
-    console.log('[Calculator] mathAPI found:', typeof window.mathAPI)
 
     if (!input.trim()) {
       setError(t('errors.emptyInput'))
@@ -297,8 +292,8 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
         // ✅ 계산 성공 시 히스토리 저장
         saveToHistory(res)
       }
-    } catch (err: any) {
-      setError(err.message || '오류가 발생했습니다')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : '오류가 발생했습니다')
     } finally {
       // ✅ Phase 2: 항상 로딩 상태 해제
       setIsCalculating(false)

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { analyzePrime } from '../lib/electron'
 import type { PrimeResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Input from './Input'
 import Button from './Button'
 import Card from './Card'
@@ -27,7 +28,7 @@ export default function PrimeCalculator() {
       const res = await analyzePrime(num)
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }

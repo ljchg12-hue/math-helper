@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { polynomialOperation } from '../lib/electron'
 import type { PolynomialResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Button from './Button'
 import Card from './Card'
 
@@ -29,7 +30,7 @@ export default function PolynomialCalculator() {
       const res = await polynomialOperation(coeffs1, coeffs2, operation)
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }

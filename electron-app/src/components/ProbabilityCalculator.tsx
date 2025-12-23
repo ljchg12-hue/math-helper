@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { calculateProbability } from '../lib/electron'
 import type { ProbabilityResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Input from './Input'
 import Button from './Button'
 import Card from './Card'
@@ -39,7 +40,7 @@ export default function ProbabilityCalculator() {
       const res = await calculateProbability(fav, tot)
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }

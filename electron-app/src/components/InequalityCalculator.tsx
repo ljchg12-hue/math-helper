@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { solveInequality } from '../lib/electron'
 import type { InequalityResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Input from './Input'
 import Button from './Button'
 import Card from './Card'
@@ -30,7 +31,7 @@ export default function InequalityCalculator() {
       const res = await solveInequality(aNum, bNum, operator)
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }

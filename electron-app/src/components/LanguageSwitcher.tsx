@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Globe } from 'lucide-react'
+import { setItem } from '../utils/safeStorage'
 
 export default function LanguageSwitcher() {
   const { i18n, t } = useTranslation()
@@ -7,7 +8,7 @@ export default function LanguageSwitcher() {
   const toggleLanguage = () => {
     const newLang = i18n.language === 'ko' ? 'en' : 'ko'
     i18n.changeLanguage(newLang)
-    localStorage.setItem('language', newLang)
+    setItem('language', newLang)
   }
 
   return (

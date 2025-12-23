@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { solveLinear } from '../lib/electron'
 import type { LinearResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Input from './Input'
 import Button from './Button'
 import Card from './Card'
@@ -29,7 +30,7 @@ export default function LinearCalculator() {
       const res = await solveLinear({ a: aNum, b: bNum })
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }

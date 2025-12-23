@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { factorizeQuadratic } from '../lib/electron'
 import type { FactorizationResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Input from './Input'
 import Button from './Button'
 import Card from './Card'
@@ -31,7 +32,7 @@ export default function FactorizationCalculator() {
       const res = await factorizeQuadratic(aNum, bNum, cNum)
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }

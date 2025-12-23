@@ -1,6 +1,23 @@
 import { useState } from 'react'
 import Card from './Card'
 import UniversalCalculator from './UniversalCalculator'
+import LinearCalculator from './LinearCalculator'
+import QuadraticCalculator from './QuadraticCalculator'
+import GeometryCalculator from './GeometryCalculator'
+import StatisticsCalculator from './StatisticsCalculator'
+import FactorizationCalculator from './FactorizationCalculator'
+import PrimeCalculator from './PrimeCalculator'
+import SimultaneousCalculator from './SimultaneousCalculator'
+import PolynomialCalculator from './PolynomialCalculator'
+import InequalityCalculator from './InequalityCalculator'
+import ProbabilityCalculator from './ProbabilityCalculator'
+import MatrixCalculator from './MatrixCalculator'
+import ExponentCalculator from './ExponentCalculator'
+import TrigonometryCalculator from './TrigonometryCalculator'
+import SequenceCalculator from './SequenceCalculator'
+import VectorCalculator from './VectorCalculator'
+import ComplexCalculator from './ComplexCalculator'
+import CalculusCalculator from './CalculusCalculator'
 
 interface Category {
   id: string
@@ -174,6 +191,55 @@ export default function CategoryCalculator({ initialInput, onInputUsed }: Catego
   const category = categories.find(c => c.id === selectedCategory)
   if (!category) return null
 
+  // ✅ Phase 3: 카테고리별 특화 계산기 매핑
+  const renderCalculator = () => {
+    switch (selectedCategory) {
+      case 'linear_equation':
+        return <LinearCalculator />
+      case 'quadratic_equation':
+        return <QuadraticCalculator />
+      case 'geometry':
+        return <GeometryCalculator />
+      case 'statistics':
+        return <StatisticsCalculator />
+      case 'factorization':
+        return <FactorizationCalculator />
+      case 'prime':
+        return <PrimeCalculator />
+      case 'simultaneous_equations':
+        return <SimultaneousCalculator />
+      case 'polynomial':
+        return <PolynomialCalculator />
+      case 'inequality':
+        return <InequalityCalculator />
+      case 'probability':
+        return <ProbabilityCalculator />
+      case 'matrix':
+        return <MatrixCalculator />
+      case 'exponent':
+        return <ExponentCalculator />
+      case 'trigonometry':
+        return <TrigonometryCalculator />
+      case 'sequence':
+        return <SequenceCalculator />
+      case 'vector':
+        return <VectorCalculator />
+      case 'complex_number':
+        return <ComplexCalculator />
+      case 'calculus':
+        return <CalculusCalculator />
+      default:
+        // 기본값: UniversalCalculator (공식 자동 입력 지원)
+        return (
+          <UniversalCalculator
+            key={selectedCategory}
+            initialInput={initialInput}
+            onInputUsed={onInputUsed}
+          />
+        )
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* 뒤로가기 버튼 */}
@@ -212,12 +278,8 @@ export default function CategoryCalculator({ initialInput, onInputUsed }: Catego
         </div>
       </Card>
 
-      {/* 범용 계산기 */}
-      <UniversalCalculator
-        key={selectedCategory}
-        initialInput={initialInput}
-        onInputUsed={onInputUsed}
-      />
+      {/* ✅ 카테고리별 특화 계산기 렌더링 */}
+      {renderCalculator()}
     </div>
   )
 }

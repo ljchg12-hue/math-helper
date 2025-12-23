@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { matrixOperation } from '../lib/electron'
 import type { MatrixResult } from '../types'
+import { formatError } from '../utils/errorHandler'
 import Button from './Button'
 import Card from './Card'
 
@@ -46,7 +47,7 @@ export default function MatrixCalculator() {
       const res = await matrixOperation(m1, m2, operation)
       setResult(res)
     } catch (err) {
-      setError(err as string)
+      setError(formatError(err))
     } finally {
       setLoading(false)
     }
