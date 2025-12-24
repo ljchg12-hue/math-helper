@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Calculator, BookOpen, FileText, Settings, BookMarked } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import CategoryCalculator from './components/CategoryCalculator'
+import EngineeringCalculator from './components/EngineeringCalculator'
 import ConceptGuide from './components/ConceptGuide'
 import ProblemGenerator from './components/ProblemGenerator'
 import SettingsPanel from './components/SettingsPanel'
@@ -11,9 +12,11 @@ import ThemeToggle from './components/ThemeToggle'
 import { ThemeProvider } from './contexts/ThemeContext'
 
 type Tab = 'calculator' | 'concept' | 'problems' | 'formulas' | 'settings'
+type CalculatorMode = 'category' | 'engineering'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('calculator')
+  const [calculatorMode, setCalculatorMode] = useState<CalculatorMode>('category')
   const [pendingFormulaInput, setPendingFormulaInput] = useState<string>('')
   const { t } = useTranslation()
 
@@ -83,10 +86,44 @@ export default function App() {
         {/* 메인 콘텐츠 */}
         <main className="max-w-7xl mx-auto px-4 py-8">
           {activeTab === 'calculator' && (
-            <CategoryCalculator
-              initialInput={pendingFormulaInput}
-              onInputUsed={() => setPendingFormulaInput('')}
-            />
+            <div className="space-y-4">
+              {/* 계산기 모드 선택 */}
+              <div className="flex gap-2 justify-center">
+                <button
+                  onClick={() => setCalculatorMode('category')}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                    calculatorMode === 'category'
+                      ? 'bg-blue-600 text-white shadow-lg scale-105'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
+                  }`}
+                >
+                  📚 카테고리별 계산기
+                </button>
+                <button
+                  onClick={() => setCalculatorMode('engineering')}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                    calculatorMode === 'engineering'
+                      ? 'bg-blue-600 text-white shadow-lg scale-105'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
+                  }`}
+                >
+                  🔬 공학용 계산기
+                </button>
+              </div>
+
+              {/* 선택된 모드 표시 */}
+              {calculatorMode === 'category' ? (
+                <CategoryCalculator
+                  initialInput={pendingFormulaInput}
+                  onInputUsed={() => setPendingFormulaInput('')}
+                />
+              ) : (
+                <EngineeringCalculator
+                  initialInput={pendingFormulaInput}
+                  onInputUsed={() => setPendingFormulaInput('')}
+                />
+              )}
+            </div>
           )}
           {activeTab === 'formulas' && <FormulaLibrary onInsertFormula={handleFormulaInsert} />}
           {activeTab === 'concept' && <ConceptGuide />}
