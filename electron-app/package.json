@@ -1,6 +1,6 @@
 {
   "name": "math-helper-gui",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "수학 도우미 - 범용 수식 파서 기반 공학용 계산기",
   "author": {
     "name": "Math Helper Team",

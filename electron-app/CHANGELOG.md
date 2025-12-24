@@ -2,6 +2,31 @@
 
 All notable changes to MathHelper will be documented in this file.
 
+## [1.0.11] - 2025-12-24
+
+### 🐛 Critical Bugfix (치명적 버그 수정)
+
+**문제:** v1.0.10 "module not found: mathjs" 에러 발생
+- lib/electron.ts의 Window interface가 preload.js와 불일치
+- TypeScript 타입 정의에 실제 함수가 없어 런타임 에러
+
+**해결:**
+- ✅ lib/electron.ts를 preload.js의 실제 함수와 일치하도록 수정
+- ✅ 17개 특화 함수 타입 제거 (solveLinear, solveQuadratic 등)
+- ✅ 범용 함수 타입 추가 (evaluate, solve, differentiate 등)
+- ✅ UniversalCalculator 정상 작동 확인
+
+### 📦 Technical Changes
+- lib/electron.ts: 130줄 → 30줄 (-100줄, -77%)
+- Window.mathAPI 타입 정의를 preload.js와 100% 일치
+
+### ✅ Result
+- "module not found" 에러 완전 해결
+- 모든 카테고리 계산기 정상 작동
+- mathjs/nerdamer 로드 성공
+
+---
+
 ## [1.0.10] - 2025-12-24
 
 ### 🔄 Architecture Refactoring (아키텍처 리팩토링)
