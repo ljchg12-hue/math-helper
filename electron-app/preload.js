@@ -8,29 +8,21 @@ let initError = null
 
 try {
   const { contextBridge } = require('electron')
-  const path = require('path')
   console.log('[Preload] Electron contextBridge loaded')
 
-  // ✅ FIX: process.resourcesPath 사용으로 정확한 경로 참조
-  // __dirname은 app.asar 내부를 가리키므로 process.resourcesPath 사용
-  const resourcesPath = process.resourcesPath || path.join(__dirname, '..')
-  const mathjsPath = path.join(resourcesPath, 'app.asar.unpacked/node_modules/mathjs')
-  const nerdamerPath = path.join(resourcesPath, 'app.asar.unpacked/node_modules/nerdamer')
-
-  console.log('[Preload] Resources path:', resourcesPath)
-  console.log('[Preload] __dirname:', __dirname)
-
-  console.log('[Preload] Loading mathjs from:', mathjsPath)
-  const mathjs = require(mathjsPath)
+  // ✅ FIX v1.0.17: 직접 require()로 esbuild 번들링 가능하게 변경
+  // sandbox: true 환경에서도 동작 (번들된 코드 사용)
+  console.log('[Preload] Loading mathjs (bundled)...')
+  const mathjs = require('mathjs')
   console.log('[Preload] mathjs loaded')
 
-  console.log('[Preload] Loading nerdamer from:', nerdamerPath)
-  nerdamer = require(nerdamerPath)
+  console.log('[Preload] Loading nerdamer (bundled)...')
+  nerdamer = require('nerdamer')
   console.log('[Preload] nerdamer loaded')
 
-  require(path.join(nerdamerPath, 'Solve'))
-  require(path.join(nerdamerPath, 'Algebra'))
-  require(path.join(nerdamerPath, 'Calculus'))
+  require('nerdamer/Solve')
+  require('nerdamer/Algebra')
+  require('nerdamer/Calculus')
   console.log('[Preload] nerdamer plugins loaded')
 
   const { create, all } = mathjs

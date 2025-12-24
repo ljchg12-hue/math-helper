@@ -1,6 +1,6 @@
 {
   "name": "math-helper-gui",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "description": "수학 도우미 - 범용 수식 파서 기반 공학용 계산기",
   "author": {
     "name": "Math Helper Team",
@@ -10,7 +10,7 @@
   "main": "main.js",
   "scripts": {
     "dev": "concurrently \"node node_modules/vite/bin/vite.js\" \"electron .\"",
-    "build": "node node_modules/vite/bin/vite.js build",
+    "build": "node node_modules/vite/bin/vite.js build && node build-preload.js",
     "build:win": "npm run build && node node_modules/electron-builder/out/cli/cli.js --win --x64 --dir",
     "pack:win": "npm run build && node node_modules/electron-builder/out/cli/cli.js --win --x64",
     "build:linux": "npm run build && node node_modules/electron-builder/out/cli/cli.js --linux --x64 --dir",
@@ -38,6 +38,7 @@
     "concurrently": "^8.2.2",
     "electron": "^28.0.0",
     "electron-builder": "^24.9.0",
+    "esbuild": "^0.27.2",
     "happy-dom": "^20.0.11",
     "i18next": "^25.7.3",
     "jsdom": "^27.3.0",
@@ -60,10 +61,6 @@
     "appId": "com.mathhelper.app",
     "productName": "MathHelper",
     "asar": true,
-    "asarUnpack": [
-      "node_modules/mathjs/**",
-      "node_modules/nerdamer/**"
-    ],
     "win": {
       "target": [
         "portable"
@@ -78,10 +75,7 @@
     },
     "files": [
       "dist/**/*",
-      "main.js",
-      "preload.js",
-      "node_modules/mathjs/**",
-      "node_modules/nerdamer/**"
+      "main.js"
     ],
     "directories": {
       "output": "release"
