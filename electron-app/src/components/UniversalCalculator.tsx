@@ -4,19 +4,12 @@ import Card from './Card'
 import MathKeyboard from './MathKeyboard'
 import CalculationHistory from './CalculationHistory'
 import FavoritesList from './FavoritesList'
+import GraphView from './GraphView'
 import { HistoryItem } from '../types/history'
 import { FavoriteItem } from '../types/favorites'
 import { getItem, setItem, removeItem } from '../utils/safeStorage'
 
-type CalculatorMode =
-  | 'evaluate'    // 계산
-  | 'solve'       // 방정식
-  | 'differentiate' // 미분
-  | 'integrate'   // 적분
-  | 'simplify'    // 간단히
-  | 'factor'      // 인수분해
-  | 'expand'      // 전개
-  | 'limit'       // 극한
+// ✅ CalculatorMode는 types.d.ts에서 global 정의됨
 
 interface Mode {
   id: CalculatorMode
@@ -38,11 +31,13 @@ interface CalcResult {
 interface UniversalCalculatorProps {
   initialInput?: string
   onInputUsed?: () => void
+  // ✅ Phase 2: EngineeringCalculator에서 강제 모드 설정 가능
+  forceMode?: CalculatorMode
 }
 
-export default function UniversalCalculator({ initialInput, onInputUsed }: UniversalCalculatorProps = {}) {
+export default function UniversalCalculator({ initialInput, onInputUsed, forceMode }: UniversalCalculatorProps = {}) {
   const { t } = useTranslation()
-  const [mode, setMode] = useState<CalculatorMode>('evaluate')
+  const [mode, setMode] = useState<CalculatorMode>(forceMode || 'evaluate')
   const [input, setInput] = useState('')
   const [variable, setVariable] = useState('x')
   const [result, setResult] = useState<any>(null)
@@ -58,6 +53,8 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
   const [history, setHistory] = useState<HistoryItem[]>([])
   // ✅ Phase 3: 즐겨찾기 기능
   const [favorites, setFavorites] = useState<FavoriteItem[]>([])
+  // ✅ Phase 3: 그래프 표시 기능
+  const [showGraph, setShowGraph] = useState(true)
 
   const modes: Mode[] = [
     {
@@ -115,6 +112,13 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
       icon: '∞',
       example: '(x^2-1)/(x-1)',
       description: t('modeDescriptions.limit')
+    },
+    {
+      id: 'calculateAll',
+      label: t('modes.calculateAll'),
+      icon: '⚡',
+      example: '2x^2 + 3x - 5',
+      description: t('modeDescriptions.calculateAll')
     },
   ]
 
@@ -257,45 +261,112 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
     try {
       let res
 
-      switch (mode) {
-        case 'evaluate':
-          res = window.mathAPI.evaluate(input)
-          break
-        case 'solve':
-          res = window.mathAPI.solve(input, variable)
-          break
-        case 'differentiate':
-          res = window.mathAPI.differentiate(input, variable)
-          break
-        case 'integrate':
-          res = window.mathAPI.integrate(input, variable)
-          break
-        case 'simplify':
-          res = window.mathAPI.simplify(input)
-          break
-        case 'factor':
-          res = window.mathAPI.factor(input)
-          break
-        case 'expand':
-          res = window.mathAPI.expand(input)
-          break
-        case 'limit':
-          // ✅ Phase 1: 극한 기능 완전 구현 (하드코딩 제거)
-          res = window.mathAPI.limit(input, variable, limitValue, limitDirection)
-          break
-      }
+      // ✅ Phase 2: 통합 계산 모드
+      if (mode === 'calculateAll') {
+        const startTime = performance.now()
+        const results: UnifiedCalcResult[] = []
 
-      if (!res.success) {
-        setError(res.error || t('errors.cannotCalculate'))
+        const modeExecutors = [
+          { mode: 'evaluate' as CalculatorMode, executor: () => window.mathAPI.evaluate(input) },
+          { mode: 'solve' as CalculatorMode, executor: () => window.mathAPI.solve(input, variable) },
+          { mode: 'differentiate' as CalculatorMode, executor: () => window.mathAPI.differentiate(input, variable) },
+          { mode: 'integrate' as CalculatorMode, executor: () => window.mathAPI.integrate(input, variable) },
+          { mode: 'simplify' as CalculatorMode, executor: () => window.mathAPI.simplify(input) },
+          { mode: 'factor' as CalculatorMode, executor: () => window.mathAPI.factor(input) },
+          { mode: 'expand' as CalculatorMode, executor: () => window.mathAPI.expand(input) },
+          { mode: 'limit' as CalculatorMode, executor: () => window.mathAPI.limit(input, variable, limitValue, limitDirection) },
+        ]
+
+        for (const { mode: execMode, executor } of modeExecutors) {
+          const modeInfo = modes.find(m => m.id === execMode)!
+          const modeStartTime = performance.now()
+
+          try {
+            const result = executor()
+            const executionTime = performance.now() - modeStartTime
+
+            results.push({
+              mode: execMode,
+              modeLabel: modeInfo.label,
+              icon: modeInfo.icon,
+              success: result.success,
+              result: result.success ? result : undefined,
+              error: result.success ? undefined : result.error,
+              executionTime
+            })
+          } catch (err) {
+            const executionTime = performance.now() - modeStartTime
+            results.push({
+              mode: execMode,
+              modeLabel: modeInfo.label,
+              icon: modeInfo.icon,
+              success: false,
+              error: err instanceof Error ? err.message : t('errors.cannotCalculate'),
+              executionTime
+            })
+          }
+        }
+
+        const totalTime = performance.now() - startTime
+        const successCount = results.filter(r => r.success).length
+        const failureCount = results.filter(r => !r.success).length
+
+        const unifiedResult: UnifiedCalcResponse = {
+          success: successCount > 0,
+          input,
+          variable,
+          limitValue,
+          limitDirection,
+          results,
+          totalTime,
+          successCount,
+          failureCount
+        }
+
+        setResult(unifiedResult)
+        saveToHistory({
+          success: true,
+          result: `${successCount}/${results.length} ${t('ui.successCount')}`
+        })
       } else {
-        setResult(res)
-        // ✅ 계산 성공 시 히스토리 저장
-        saveToHistory(res)
+        // 기존 단일 모드 계산
+        switch (mode) {
+          case 'evaluate':
+            res = window.mathAPI.evaluate(input)
+            break
+          case 'solve':
+            res = window.mathAPI.solve(input, variable)
+            break
+          case 'differentiate':
+            res = window.mathAPI.differentiate(input, variable)
+            break
+          case 'integrate':
+            res = window.mathAPI.integrate(input, variable)
+            break
+          case 'simplify':
+            res = window.mathAPI.simplify(input)
+            break
+          case 'factor':
+            res = window.mathAPI.factor(input)
+            break
+          case 'expand':
+            res = window.mathAPI.expand(input)
+            break
+          case 'limit':
+            res = window.mathAPI.limit(input, variable, limitValue, limitDirection)
+            break
+        }
+
+        if (!res.success) {
+          setError(res.error || t('errors.cannotCalculate'))
+        } else {
+          setResult(res)
+          saveToHistory(res)
+        }
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : '오류가 발생했습니다')
     } finally {
-      // ✅ Phase 2: 항상 로딩 상태 해제
       setIsCalculating(false)
     }
   }
@@ -425,28 +496,30 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
           </button>
         </div>
 
-        {/* 모드 선택 */}
-        <div className="flex flex-wrap gap-2">
-          {modes.map((m, index) => (
-            <button
-              key={m.id}
-              onClick={() => {
-                setMode(m.id)
-                setInput('')
-                setResult(null)
-                setError('')
-              }}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                mode === m.id
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-              title={`${m.description} (Ctrl+${index + 1})`}
-            >
-              {m.icon} {m.label}
-            </button>
-          ))}
-        </div>
+        {/* 모드 선택 (forceMode가 없을 때만 표시) */}
+        {!forceMode && (
+          <div className="flex flex-wrap gap-2">
+            {modes.map((m, index) => (
+              <button
+                key={m.id}
+                onClick={() => {
+                  setMode(m.id)
+                  setInput('')
+                  setResult(null)
+                  setError('')
+                }}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  mode === m.id
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                title={`${m.description} (Ctrl+${index + 1})`}
+              >
+                {m.icon} {m.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* 입력 영역 */}
         <div className="space-y-2">
@@ -568,44 +641,191 @@ export default function UniversalCalculator({ initialInput, onInputUsed }: Unive
 
         {/* 결과 표시 */}
         {result && (
-          <div className="space-y-3">
-            <div className={`p-4 border-2 rounded-lg ${
-              result.isIdentity
-                ? 'bg-blue-50 border-blue-200'
-                : 'bg-green-50 border-green-200'
-            }`}>
-              <p className={`text-sm font-medium mb-1 ${
-                result.isIdentity ? 'text-blue-700' : 'text-green-700'
-              }`}>
-                {result.isIdentity ? `✨ ${t('ui.identity')}:` : `✅ ${t('ui.result')}:`}
-              </p>
-              <p className={`text-2xl font-mono font-bold ${
-                result.isIdentity ? 'text-blue-900' : 'text-green-900'
-              }`}>
-                {mode === 'solve' && result.solutions !== undefined
-                  ? result.isIdentity
-                    ? t('ui.allSolutions', { variable: result.variable })
-                    : result.solutions.length === 0
-                      ? t('ui.noSolution')
-                      : result.solutions.length === 1
-                        ? `${result.variable} = ${result.solutions[0]}`
-                        : `${result.variable} = ${result.solutions.join(', ')}`
-                  : result.result}
-              </p>
-            </div>
+          <>
+            {/* ✅ Phase 2: 통합 계산 결과 UI */}
+            {mode === 'calculateAll' && 'results' in result ? (
+              <div className="space-y-3">
+                {/* 통합 결과 요약 헤더 */}
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
+                  <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+                    <span className="text-2xl">⚡</span>
+                    {t('ui.unifiedResults')}
+                  </h3>
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div className="flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                      <span className="text-green-700 dark:text-green-400 font-bold">✅ {t('ui.successCount')}</span>
+                      <span className="text-green-900 dark:text-green-200 font-extrabold text-lg">{result.successCount}</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 rounded-full">
+                      <span className="text-red-700 dark:text-red-400 font-bold">❌ {t('ui.failureCount')}</span>
+                      <span className="text-red-900 dark:text-red-200 font-extrabold text-lg">{result.failureCount}</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 dark:bg-gray-900/30 rounded-full">
+                      <span className="text-gray-700 dark:text-gray-400 font-bold">⏱️ {t('ui.totalTime')}</span>
+                      <span className="text-gray-900 dark:text-gray-200 font-extrabold text-lg">{result.totalTime.toFixed(1)}ms</span>
+                    </div>
+                  </div>
+                  {result.failureCount > 0 && (
+                    <p className="mt-2 text-xs text-orange-700 dark:text-orange-400">
+                      ⚠️ {result.failureCount}{t('ui.partialFailureWarning')}
+                    </p>
+                  )}
+                </div>
 
-            {result.steps && result.steps.length > 0 && (
-              <div className="p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
-                <p className="text-sm font-medium text-gray-700 mb-2">📝 {t('ui.steps')}:</p>
-                <ol className="space-y-1 text-gray-600">
-                  {result.steps.map((step: string, i: number) => (
-                    <li key={i} className="font-mono text-sm">
-                      {i + 1}. {step}
-                    </li>
+                {/* 모드별 결과 카드 그리드 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {result.results.map((modeResult, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        modeResult.success
+                          ? 'bg-green-50 dark:bg-green-900/10 border-green-300 dark:border-green-800 hover:shadow-md'
+                          : 'bg-gray-50 dark:bg-gray-900/10 border-gray-300 dark:border-gray-700 opacity-70'
+                      }`}
+                    >
+                      {/* 모드 헤더 */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{modeResult.icon}</span>
+                          <span className={`font-bold text-sm ${
+                            modeResult.success
+                              ? 'text-green-900 dark:text-green-100'
+                              : 'text-gray-600 dark:text-gray-400'
+                          }`}>
+                            {modeResult.modeLabel}
+                          </span>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          modeResult.success
+                            ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'
+                            : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                        }`}>
+                          {modeResult.success ? '✅' : '❌'}
+                        </span>
+                      </div>
+
+                      {/* 결과 내용 */}
+                      {modeResult.success && modeResult.result ? (
+                        <div className="space-y-2">
+                          {/* 결과값 */}
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded border border-green-200 dark:border-green-900">
+                            <p className="text-xs text-green-700 dark:text-green-400 mb-1 font-medium">결과:</p>
+                            <p className="font-mono text-sm font-bold text-green-900 dark:text-green-100 break-all">
+                              {modeResult.mode === 'solve' && modeResult.result.solutions !== undefined
+                                ? modeResult.result.isIdentity
+                                  ? `항등식 (모든 ${modeResult.result.variable} 값)`
+                                  : modeResult.result.solutions.length === 0
+                                    ? '해 없음'
+                                    : modeResult.result.solutions.length === 1
+                                      ? `${modeResult.result.variable} = ${modeResult.result.solutions[0]}`
+                                      : `${modeResult.result.variable} = ${modeResult.result.solutions.join(', ')}`
+                                : modeResult.result.result || t('ui.notApplicable')}
+                            </p>
+                          </div>
+
+                          {/* 실행 시간 */}
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            ⏱️ {modeResult.executionTime.toFixed(1)}ms
+                          </p>
+
+                          {/* 풀이 과정 (있는 경우) */}
+                          {modeResult.result.steps && modeResult.result.steps.length > 0 && (
+                            <details className="text-xs">
+                              <summary className="cursor-pointer text-blue-700 dark:text-blue-400 font-medium hover:underline">
+                                📝 풀이 과정 ({modeResult.result.steps.length}단계)
+                              </summary>
+                              <ol className="mt-2 space-y-1 text-gray-700 dark:text-gray-300 pl-4">
+                                {modeResult.result.steps.map((step: string, i: number) => (
+                                  <li key={i} className="font-mono">
+                                    {i + 1}. {step}
+                                  </li>
+                                ))}
+                              </ol>
+                            </details>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded border border-gray-300 dark:border-gray-700">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">에러:</p>
+                          <p className="text-xs text-red-700 dark:text-red-400 font-mono break-all">
+                            {modeResult.error || t('errors.cannotCalculate')}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                            ⏱️ {modeResult.executionTime.toFixed(1)}ms
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   ))}
-                </ol>
+                </div>
+              </div>
+            ) : (
+              /* 기존 단일 모드 결과 UI */
+              <div className="space-y-3">
+                <div className={`p-4 border-2 rounded-lg ${
+                  result.isIdentity
+                    ? 'bg-blue-50 border-blue-200'
+                    : 'bg-green-50 border-green-200'
+                }`}>
+                  <p className={`text-sm font-medium mb-1 ${
+                    result.isIdentity ? 'text-blue-700' : 'text-green-700'
+                  }`}>
+                    {result.isIdentity ? `✨ ${t('ui.identity')}:` : `✅ ${t('ui.result')}:`}
+                  </p>
+                  <p className={`text-2xl font-mono font-bold ${
+                    result.isIdentity ? 'text-blue-900' : 'text-green-900'
+                  }`}>
+                    {mode === 'solve' && result.solutions !== undefined
+                      ? result.isIdentity
+                        ? t('ui.allSolutions', { variable: result.variable })
+                        : result.solutions.length === 0
+                          ? t('ui.noSolution')
+                          : result.solutions.length === 1
+                            ? `${result.variable} = ${result.solutions[0]}`
+                            : `${result.variable} = ${result.solutions.join(', ')}`
+                      : result.result}
+                  </p>
+                </div>
+
+                {result.steps && result.steps.length > 0 && (
+                  <div className="p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
+                    <p className="text-sm font-medium text-gray-700 mb-2">📝 {t('ui.steps')}:</p>
+                    <ol className="space-y-1 text-gray-600">
+                      {result.steps.map((step: string, i: number) => (
+                        <li key={i} className="font-mono text-sm">
+                          {i + 1}. {step}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
               </div>
             )}
+          </>
+        )}
+
+        {/* ✅ Phase 3: 그래프 표시 */}
+        {result && !('results' in result) && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showGraph}
+                  onChange={(e) => setShowGraph(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                그래프 표시
+              </label>
+            </div>
+
+            <GraphView
+              expression={input}
+              mode={mode}
+              variable={variable}
+              result={result}
+              show={showGraph}
+            />
           </div>
         )}
       </div>

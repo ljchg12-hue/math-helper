@@ -11,6 +11,8 @@ export interface HistoryItem {
   result: string
   isIdentity?: boolean
   solutions?: any[]
+  // ✅ Phase 2: 통합 계산 결과 저장
+  unifiedResults?: any[]
 }
 
 export interface HistoryStorage {

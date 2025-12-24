@@ -69,10 +69,11 @@ export default function EngineeringCalculator({ initialInput, onInputUsed }: Eng
         </div>
       </Card>
 
-      {/* 범용 계산기 */}
+      {/* 범용 계산기 - ✅ Phase 2: 항상 통합 모드로 실행 */}
       <UniversalCalculator
         initialInput={initialInput}
         onInputUsed={onInputUsed}
+        forceMode="calculateAll"
       />
     </div>
   )

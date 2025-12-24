@@ -27,6 +27,40 @@ interface MathAPI {
   statistics: (data: number[]) => MathAPIResult
 }
 
+// ✅ Phase 2: 통합 계산 엔진 타입 정의
+type CalculatorMode =
+  | 'evaluate'
+  | 'solve'
+  | 'differentiate'
+  | 'integrate'
+  | 'simplify'
+  | 'factor'
+  | 'expand'
+  | 'limit'
+  | 'calculateAll'
+
+interface UnifiedCalcResult {
+  mode: CalculatorMode
+  modeLabel: string
+  icon: string
+  success: boolean
+  result?: MathAPIResult
+  error?: string
+  executionTime: number
+}
+
+interface UnifiedCalcResponse {
+  success: boolean
+  input: string
+  variable?: string
+  limitValue?: string
+  limitDirection?: 'left' | 'right' | 'both'
+  results: UnifiedCalcResult[]
+  totalTime: number
+  successCount: number
+  failureCount: number
+}
+
 declare global {
   interface Window {
     mathAPI: MathAPI

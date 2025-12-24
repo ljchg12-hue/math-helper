@@ -54,6 +54,7 @@
     "vitest": "^4.0.16"
   },
   "dependencies": {
+    "function-plot": "^1.25.1",
     "mathjs": "^15.1.0",
     "nerdamer": "^1.1.13"
   },
