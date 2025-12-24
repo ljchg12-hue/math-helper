@@ -2,6 +2,48 @@
 
 All notable changes to MathHelper will be documented in this file.
 
+## [1.0.14] - 2025-12-24
+
+### 🐛 Bugfix (버그 수정)
+
+**Critical: mathjs 모듈 로드 실패 수정**
+
+#### 🎯 문제
+- **증상**: "수학 엔진 로드 실패: module not found: mathjs" 에러
+- **원인**: electron-builder가 mathjs/nerdamer를 asar 아카이브에만 패키징
+- **영향**: 앱 실행 시 모든 수학 계산 기능 작동 불가
+
+#### ✅ 해결
+- **asarUnpack 설정 추가**: mathjs, nerdamer를 별도 디렉토리로 압축 해제
+- **결과**: `app.asar.unpacked/node_modules/` 경로에 모듈 배치
+- **검증**: preload.js에서 정상적으로 require() 가능
+
+#### 📦 Build Changes
+```json
+"build": {
+  "asar": true,
+  "asarUnpack": [
+    "node_modules/mathjs/**",
+    "node_modules/nerdamer/**"
+  ]
+}
+```
+
+#### 📊 Package Size
+- **app.asar**: 3.0 MB (앱 코드만)
+- **app.asar.unpacked**: 2.7 GB (mathjs + nerdamer)
+- **총 크기**: 증가 (하지만 기능 정상 작동)
+
+### 📁 Files Changed
+- **수정**: package.json (version → 1.0.14, asarUnpack 추가)
+
+### 🎓 User Impact
+- **✅ 앱 정상 작동**: 모든 수학 계산 기능 복구
+- **✅ 안정성 향상**: 모듈 로드 에러 완전 해결
+- **⚠️ 참고**: v1.0.13은 사용 불가 (mathjs 로드 실패)
+
+---
+
 ## [1.0.13] - 2025-12-24
 
 ### ✨ Features (새 기능)
