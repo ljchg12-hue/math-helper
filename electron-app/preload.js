@@ -11,9 +11,14 @@ try {
   const path = require('path')
   console.log('[Preload] Electron contextBridge loaded')
 
-  // ✅ FIX: asarUnpack된 모듈의 명시적 경로 사용
-  const mathjsPath = path.join(__dirname, '../app.asar.unpacked/node_modules/mathjs')
-  const nerdamerPath = path.join(__dirname, '../app.asar.unpacked/node_modules/nerdamer')
+  // ✅ FIX: process.resourcesPath 사용으로 정확한 경로 참조
+  // __dirname은 app.asar 내부를 가리키므로 process.resourcesPath 사용
+  const resourcesPath = process.resourcesPath || path.join(__dirname, '..')
+  const mathjsPath = path.join(resourcesPath, 'app.asar.unpacked/node_modules/mathjs')
+  const nerdamerPath = path.join(resourcesPath, 'app.asar.unpacked/node_modules/nerdamer')
+
+  console.log('[Preload] Resources path:', resourcesPath)
+  console.log('[Preload] __dirname:', __dirname)
 
   console.log('[Preload] Loading mathjs from:', mathjsPath)
   const mathjs = require(mathjsPath)

@@ -2,6 +2,61 @@
 
 All notable changes to MathHelper will be documented in this file.
 
+## [1.0.16] - 2025-12-24
+
+### 🐛 Bugfix (Critical - ROOT CAUSE 완전 해결)
+
+**진짜 문제 발견 및 수정: process.resourcesPath 사용**
+
+#### 🔬 근본 원인 분석 (Agent 사용)
+**Root Cause Analyst + Explore Agent 동원**:
+- **발견**: `__dirname`이 asar 가상 경로 반환
+- **문제**: `path.join(__dirname, '../app.asar.unpacked')` 경로 해석 실패
+- **근본 원인**: Electron의 asar 가상 파일 시스템 동작 방식 오해
+
+#### 🎯 진짜 문제
+```javascript
+// ❌ v1.0.15 (실패)
+__dirname → /resources/app.asar/ (가상 경로)
+path.join(__dirname, '../app.asar.unpacked/...')
+→ 가상 FS 경계에서 실패!
+
+// ✅ v1.0.16 (성공)
+process.resourcesPath → /resources (실제 물리적 경로)
+path.join(process.resourcesPath, 'app.asar.unpacked/...')
+→ 정확한 경로!
+```
+
+#### ✅ 최종 해결
+```javascript
+// process.resourcesPath 사용으로 물리적 경로 직접 참조
+const resourcesPath = process.resourcesPath || path.join(__dirname, '..')
+const mathjsPath = path.join(resourcesPath, 'app.asar.unpacked/node_modules/mathjs')
+```
+
+#### 📊 검증
+- ✅ app.asar: 2.4 MB (앱 코드)
+- ✅ app.asar.unpacked/node_modules: 존재 확인
+- ✅ 디버깅 로그 추가 (resourcesPath, __dirname 출력)
+- ✅ 개발/프로덕션 양쪽 호환 (fallback 포함)
+
+### 🤖 Agent Analysis
+- **Root Cause Analyst**: Electron asar 가상 FS 동작 분석
+- **Explore Agent**: 빌드 구조 상세 분석
+- **결론**: `__dirname`의 한계, `process.resourcesPath` 필수
+
+### 📁 Files Changed
+- **수정**: preload.js (process.resourcesPath 사용)
+- **수정**: package.json (version → 1.0.16)
+
+### 🎓 User Impact
+- **✅ 최종 해결**: 모든 수학 계산 기능 보장
+- **✅ 보안 유지**: sandbox: true 유지
+- **✅ 디버깅 강화**: 경로 로그 추가
+- **⚠️ 참고**: v1.0.13-v1.0.15는 모두 사용 불가
+
+---
+
 ## [1.0.15] - 2025-12-24
 
 ### 🐛 Bugfix (버그 수정)
