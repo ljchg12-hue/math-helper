@@ -2,6 +2,62 @@
 
 All notable changes to MathHelper will be documented in this file.
 
+## [1.0.10] - 2025-12-24
+
+### 🔄 Architecture Refactoring (아키텍처 리팩토링)
+
+**핵심 변경: 하드코딩 제거, 범용 수식 파서로 복귀**
+
+#### ❌ 제거된 것
+- **17개 특화 계산기 삭제** (하드코딩 방식)
+  - LinearCalculator, QuadraticCalculator, GeometryCalculator
+  - StatisticsCalculator, FactorizationCalculator, PrimeCalculator
+  - SimultaneousCalculator, PolynomialCalculator, InequalityCalculator
+  - ProbabilityCalculator, MatrixCalculator, ExponentCalculator
+  - TrigonometryCalculator, SequenceCalculator, VectorCalculator
+  - ComplexCalculator, CalculusCalculator
+
+#### ✅ 복원된 것
+- **UniversalCalculator 단일 사용** (범용 수식 파서)
+  - mathjs + nerdamer 기반 공학용 계산기
+  - 모든 수식 패턴 처리 가능
+  - 카테고리는 단순히 예시와 설명만 제공
+
+### 🎯 Why This Change?
+
+**문제점:**
+```typescript
+// ❌ v1.0.8/v1.0.9 방식 (하드코딩)
+import LinearCalculator from './LinearCalculator'      // 일차방정식만
+import QuadraticCalculator from './QuadraticCalculator' // 이차방정식만
+// → 정해진 패턴만 풀 수 있음
+```
+
+**해결책:**
+```typescript
+// ✅ v1.0.10 방식 (범용 파서)
+import UniversalCalculator from './UniversalCalculator'
+// → mathjs/nerdamer로 모든 수식 처리
+// → 30년 된 공학용 계산기처럼 동작
+```
+
+### 📦 Performance Impact
+- **번들 크기**: 335.51 kB → 289.36 kB (-46 kB, -13.7%)
+- **모듈 수**: 1647 → 1626 (-21 modules)
+- **빌드 시간**: 1.02s → 927ms (-9%)
+
+### 🔧 Technical Changes
+- CategoryCalculator.tsx: v1.0.7 방식으로 복원
+- 17개 특화 계산기 파일 완전 제거
+- preload.js: 특화 함수 유지 (미사용, 무해)
+
+### 🎓 User Impact
+- **이전**: 카테고리별로 다른 계산기 (제한적)
+- **이후**: 모든 카테고리에서 범용 계산기 (무제한)
+- **장점**: 패턴에 얽매이지 않고 자유로운 수식 입력 가능
+
+---
+
 ## [1.0.9] - 2025-12-23
 
 ### 🐛 Bug Fixes (버그 수정 - 총 53개)

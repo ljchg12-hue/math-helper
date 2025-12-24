@@ -1,23 +1,6 @@
 import { useState } from 'react'
 import Card from './Card'
 import UniversalCalculator from './UniversalCalculator'
-import LinearCalculator from './LinearCalculator'
-import QuadraticCalculator from './QuadraticCalculator'
-import GeometryCalculator from './GeometryCalculator'
-import StatisticsCalculator from './StatisticsCalculator'
-import FactorizationCalculator from './FactorizationCalculator'
-import PrimeCalculator from './PrimeCalculator'
-import SimultaneousCalculator from './SimultaneousCalculator'
-import PolynomialCalculator from './PolynomialCalculator'
-import InequalityCalculator from './InequalityCalculator'
-import ProbabilityCalculator from './ProbabilityCalculator'
-import MatrixCalculator from './MatrixCalculator'
-import ExponentCalculator from './ExponentCalculator'
-import TrigonometryCalculator from './TrigonometryCalculator'
-import SequenceCalculator from './SequenceCalculator'
-import VectorCalculator from './VectorCalculator'
-import ComplexCalculator from './ComplexCalculator'
-import CalculusCalculator from './CalculusCalculator'
 
 interface Category {
   id: string
@@ -162,8 +145,8 @@ export default function CategoryCalculator({ initialInput, onInputUsed }: Catego
       <Card>
         <div className="space-y-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">계산기 카테고리</h2>
-            <p className="text-gray-600">원하는 계산 유형을 선택하세요</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">계산기 카테고리</h2>
+            <p className="text-gray-600 dark:text-gray-400">원하는 계산 유형을 선택하세요</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -171,13 +154,13 @@ export default function CategoryCalculator({ initialInput, onInputUsed }: Catego
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className="p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                className="p-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group"
               >
                 <div className="text-3xl mb-2">{category.icon}</div>
-                <div className="text-sm font-semibold text-gray-900 mb-1">
+                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
                   {category.name}
                 </div>
-                <div className="text-xs text-gray-500 line-clamp-2">
+                <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
                   {category.description}
                 </div>
               </button>
@@ -191,61 +174,12 @@ export default function CategoryCalculator({ initialInput, onInputUsed }: Catego
   const category = categories.find(c => c.id === selectedCategory)
   if (!category) return null
 
-  // ✅ Phase 3: 카테고리별 특화 계산기 매핑
-  const renderCalculator = () => {
-    switch (selectedCategory) {
-      case 'linear_equation':
-        return <LinearCalculator />
-      case 'quadratic_equation':
-        return <QuadraticCalculator />
-      case 'geometry':
-        return <GeometryCalculator />
-      case 'statistics':
-        return <StatisticsCalculator />
-      case 'factorization':
-        return <FactorizationCalculator />
-      case 'prime':
-        return <PrimeCalculator />
-      case 'simultaneous_equations':
-        return <SimultaneousCalculator />
-      case 'polynomial':
-        return <PolynomialCalculator />
-      case 'inequality':
-        return <InequalityCalculator />
-      case 'probability':
-        return <ProbabilityCalculator />
-      case 'matrix':
-        return <MatrixCalculator />
-      case 'exponent':
-        return <ExponentCalculator />
-      case 'trigonometry':
-        return <TrigonometryCalculator />
-      case 'sequence':
-        return <SequenceCalculator />
-      case 'vector':
-        return <VectorCalculator />
-      case 'complex_number':
-        return <ComplexCalculator />
-      case 'calculus':
-        return <CalculusCalculator />
-      default:
-        // 기본값: UniversalCalculator (공식 자동 입력 지원)
-        return (
-          <UniversalCalculator
-            key={selectedCategory}
-            initialInput={initialInput}
-            onInputUsed={onInputUsed}
-          />
-        )
-    }
-  }
-
   return (
     <div className="space-y-4">
       {/* 뒤로가기 버튼 */}
       <button
         onClick={() => setSelectedCategory(null)}
-        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
       >
         ← 카테고리 목록으로
       </button>
@@ -256,19 +190,19 @@ export default function CategoryCalculator({ initialInput, onInputUsed }: Catego
           <div className="flex items-center gap-3">
             <div className="text-4xl">{category.icon}</div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{category.name}</h2>
-              <p className="text-sm text-gray-600">{category.description}</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{category.name}</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{category.description}</p>
             </div>
           </div>
 
           {/* 샘플 예제 */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">📝 예제:</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">📝 예제:</h3>
             <div className="grid gap-2">
               {category.samples.map((sample, idx) => (
                 <div
                   key={idx}
-                  className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg font-mono text-sm text-blue-900"
+                  className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg font-mono text-sm text-blue-900 dark:text-blue-300"
                 >
                   {sample}
                 </div>
@@ -278,8 +212,12 @@ export default function CategoryCalculator({ initialInput, onInputUsed }: Catego
         </div>
       </Card>
 
-      {/* ✅ 카테고리별 특화 계산기 렌더링 */}
-      {renderCalculator()}
+      {/* 범용 계산기 (mathjs/nerdamer 기반) */}
+      <UniversalCalculator
+        key={selectedCategory}
+        initialInput={initialInput}
+        onInputUsed={onInputUsed}
+      />
     </div>
   )
 }

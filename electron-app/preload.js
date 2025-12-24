@@ -267,6 +267,10 @@ function solveEquation(equation, variable = 'x') {
 // ============================================
 function differentiate(expr, variable = 'x', order = 1) {
   try {
+    // ✅ HIGH #3: 입력 검증 추가
+    expr = validateInput(expr)
+    variable = validateInput(variable, 10)
+
     let result = nerdamer(expr)
 
     // n차 미분
@@ -304,6 +308,10 @@ function differentiate(expr, variable = 'x', order = 1) {
 // ============================================
 function integrate(expr, variable = 'x', definite = false, lower = null, upper = null) {
   try {
+    // ✅ HIGH #3: 입력 검증 추가
+    expr = validateInput(expr)
+    variable = validateInput(variable, 10)
+
     // ✅ Phase 2 Item 17: Check for common divergent integrals
     const exprLower = expr.toLowerCase()
     if (exprLower.includes('1/x') && definite && lower !== null && upper !== null) {
@@ -372,6 +380,9 @@ function integrate(expr, variable = 'x', definite = false, lower = null, upper =
 // ============================================
 function simplifyExpression(expr) {
   try {
+    // ✅ HIGH #3: 입력 검증 추가
+    expr = validateInput(expr)
+
     const simplified = nerdamer(expr).simplify().text()
 
     return {
@@ -396,6 +407,9 @@ function simplifyExpression(expr) {
 // ============================================
 function factorExpression(expr) {
   try {
+    // ✅ HIGH #3: 입력 검증 추가
+    expr = validateInput(expr)
+
     const factored = nerdamer(expr).factor().text()
 
     return {
@@ -420,6 +434,9 @@ function factorExpression(expr) {
 // ============================================
 function expandExpression(expr) {
   try {
+    // ✅ HIGH #3: 입력 검증 추가
+    expr = validateInput(expr)
+
     const expanded = nerdamer(expr).expand().text()
 
     return {
@@ -444,6 +461,16 @@ function expandExpression(expr) {
 // ============================================
 function matrixCalculate(operation, matrixA, matrixB = null) {
   try {
+    // ✅ HIGH #3: operation 파라미터 검증 추가
+    if (typeof operation !== 'string' || operation.length > 50) {
+      throw new Error('잘못된 연산 유형입니다')
+    }
+
+    // ✅ 배열 검증 추가
+    if (!Array.isArray(matrixA) || matrixA.length === 0) {
+      throw new Error('행렬 A가 유효하지 않습니다')
+    }
+
     const A = math.matrix(matrixA)
     let result
     let steps = []
@@ -514,8 +541,14 @@ function matrixCalculate(operation, matrixA, matrixB = null) {
 // ============================================
 function calculateStatistics(data) {
   try {
+    // ✅ HIGH #3: 배열 검증 강화
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error('데이터를 입력하세요')
+    }
+
+    // ✅ DoS 방지: 최대 데이터 개수 제한
+    if (data.length > 10000) {
+      throw new Error('데이터가 너무 많습니다 (최대 10000개)')
     }
 
     const numbers = data.map(x => parseFloat(x)).filter(x => !isNaN(x))
@@ -563,6 +596,10 @@ function calculateStatistics(data) {
 // ============================================
 function calculateLimit(expr, variable, approach, direction = 'both') {
   try {
+    // ✅ HIGH #3: 입력 검증 추가
+    expr = validateInput(expr)
+    variable = validateInput(variable, 10)
+
     // Nerdamer는 극한을 직접 지원하지 않으므로 근사값 계산
     let result
     const approachNum = parseFloat(approach)
@@ -573,6 +610,10 @@ function calculateLimit(expr, variable, approach, direction = 'both') {
         // ✅ HIGH #2: 무한대 근사값 정확도 개선 (1000000 → 1e9)
         const largeValue = 1e9
         result = nerdamer(expr).evaluate({[variable]: largeValue}).text()
+      } else if (approach === '-infinity' || approach === '-inf') {
+        // ✅ MEDIUM #5: 음수 무한대 지원 추가
+        const largeNegativeValue = -1e9
+        result = nerdamer(expr).evaluate({[variable]: largeNegativeValue}).text()
       } else {
         throw new Error('접근값이 올바르지 않습니다')
       }

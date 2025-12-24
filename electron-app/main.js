@@ -9,7 +9,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false,  // ✅ sandbox 비활성화
+      sandbox: true,  // ✅ 보안 강화: sandbox 활성화
       enableRemoteModule: false,
       nodeIntegrationInWorker: false,
       nodeIntegrationInSubFrames: false,
@@ -22,8 +22,7 @@ function createWindow() {
     win.webContents.openDevTools()
   } else {
     win.loadFile('dist/index.html')
-    // 프로덕션에서도 개발자 도구 열기 (디버깅용)
-    win.webContents.openDevTools()
+    // ✅ 보안 강화: 프로덕션에서 DevTools 자동 열림 제거
   }
 }
 
