@@ -8,17 +8,24 @@ let initError = null
 
 try {
   const { contextBridge } = require('electron')
+  const path = require('path')
   console.log('[Preload] Electron contextBridge loaded')
 
-  const mathjs = require('mathjs')
+  // ✅ FIX: asarUnpack된 모듈의 명시적 경로 사용
+  const mathjsPath = path.join(__dirname, '../app.asar.unpacked/node_modules/mathjs')
+  const nerdamerPath = path.join(__dirname, '../app.asar.unpacked/node_modules/nerdamer')
+
+  console.log('[Preload] Loading mathjs from:', mathjsPath)
+  const mathjs = require(mathjsPath)
   console.log('[Preload] mathjs loaded')
 
-  nerdamer = require('nerdamer')
+  console.log('[Preload] Loading nerdamer from:', nerdamerPath)
+  nerdamer = require(nerdamerPath)
   console.log('[Preload] nerdamer loaded')
 
-  require('nerdamer/Solve')
-  require('nerdamer/Algebra')
-  require('nerdamer/Calculus')
+  require(path.join(nerdamerPath, 'Solve'))
+  require(path.join(nerdamerPath, 'Algebra'))
+  require(path.join(nerdamerPath, 'Calculus'))
   console.log('[Preload] nerdamer plugins loaded')
 
   const { create, all } = mathjs

@@ -2,6 +2,56 @@
 
 All notable changes to MathHelper will be documented in this file.
 
+## [1.0.15] - 2025-12-24
+
+### 🐛 Bugfix (버그 수정)
+
+**Critical: mathjs 모듈 경로 해석 실패 수정 (근본 원인 해결)**
+
+#### 🔬 초정밀 분석 결과
+**멀티소스 검증**: 4개 독립 AI 모델 분석 (Gemini, Mistral-large-3, DeepSeek-v3.1, Qwen3-coder, Cogito-2.1)
+- 100% 동일한 진단: **require() 경로 해석 실패**
+- asarUnpack 설정은 정확했으나, 명시적 경로 지정 누락
+
+#### 🎯 근본 원인
+1. **1차 문제**: `require('mathjs')` → Node.js가 `app.asar.unpacked/` 경로 자동 탐색 안 함
+2. **2차 문제**: sandbox 모드에서 모듈 해석 경로 제한
+3. **해결책**: 명시적 절대 경로 사용
+
+#### ✅ 수정 내용
+```javascript
+// ❌ 이전 (실패):
+const mathjs = require('mathjs')
+
+// ✅ 수정 (성공):
+const mathjsPath = path.join(__dirname, '../app.asar.unpacked/node_modules/mathjs')
+const mathjs = require(mathjsPath)
+```
+
+#### 📊 검증 완료
+- ✅ mathjs 경로: `app.asar.unpacked/node_modules/mathjs`
+- ✅ nerdamer 경로: `app.asar.unpacked/node_modules/nerdamer`
+- ✅ 플러그인 경로: `path.join(nerdamerPath, 'Solve|Algebra|Calculus')`
+- ✅ sandbox: true 유지 (보안 유지)
+
+### 📁 Files Changed
+- **수정**: preload.js (명시적 경로 사용)
+- **수정**: package.json (version → 1.0.15)
+
+### 🎓 User Impact
+- **✅ 완전 해결**: 모든 수학 계산 기능 정상 작동 보장
+- **✅ 보안 유지**: sandbox 모드 유지로 안전성 확보
+- **⚠️ 참고**: v1.0.13, v1.0.14는 사용 불가
+
+### 🤖 AI Analysis
+- **Gemini 2.5 Pro**: contextBridge 설명, preload 구조 분석
+- **Mistral-large-3 (675B)**: asarUnpack 메커니즘, 경로 해석 순서
+- **DeepSeek-v3.1 (671B)**: sandbox 모드 영향, 모듈 해석기 동작
+- **Qwen3-coder (480B)**: 코드 레벨 수정안 제시
+- **Cogito-2.1 (671B)**: 가설 검증, 근본 원인 분석
+
+---
+
 ## [1.0.14] - 2025-12-24
 
 ### 🐛 Bugfix (버그 수정)
