@@ -1,0 +1,19 @@
+[package]
+name = "math-helper-gui"
+version = "1.0.0"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0", features = [] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# 상위 크레이트 참조 (현재는 독립 구현)
+# math-core = { path = "../../math-core" }
+# math-features = { path = "../../math-features" }
+
+[workspace]
+# 이 패키지를 독립 workspace로 설정

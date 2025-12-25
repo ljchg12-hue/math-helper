@@ -721,42 +721,34 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
             </div>
           )}
 
-          {/* ✅ Phase 3: 다중 변수 파라미터 입력 UI */}
-          {mode === 'solve' && variableAnalysis && variableAnalysis.hasMultipleVars && (
+          {/* ✅ Phase 3: 파라미터 입력 UI - 항상 표시 (a~f) */}
+          {mode === 'solve' && (
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-lg border-2 border-amber-200 dark:border-amber-700">
               <h3 className="text-sm font-semibold mb-2 text-amber-900 dark:text-amber-100 flex items-center gap-2">
                 <span>📐</span>
-                <span>다중 변수 감지됨</span>
+                <span>파라미터 입력</span>
               </h3>
 
-              {/* 주 변수 표시 */}
-              <div className="mb-3 p-2 bg-white/50 dark:bg-gray-800/50 rounded border border-amber-300 dark:border-amber-600">
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  <span className="font-semibold">해를 구할 변수:</span>{' '}
-                  <span className="font-mono text-blue-600 dark:text-blue-400 text-lg">{variableAnalysis.primaryVariable}</span>
-                </p>
-              </div>
-
-              {/* 파라미터 입력 필드들 */}
+              {/* 파라미터 입력 필드들 - 고정 (a, b, c, d, e, f) */}
               <div className="space-y-2">
                 <label className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                  파라미터 값 (선택사항):
+                  파라미터 값 (필요한 것만 입력):
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {variableAnalysis.parameters.map(param => (
+                <div className="grid grid-cols-3 gap-2">
+                  {['a', 'b', 'c', 'd', 'e', 'f'].map(param => (
                     <div key={param} className="flex items-center gap-2">
-                      <span className="w-10 text-right font-mono text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <span className="w-8 text-right font-mono text-sm font-semibold text-gray-700 dark:text-gray-300">
                         {param} =
                       </span>
                       <input
                         type="text"
-                        placeholder="값 또는 수식"
+                        placeholder="값"
                         value={parameterValues[param] || ''}
                         onChange={(e) => setParameterValues({
                           ...parameterValues,
                           [param]: e.target.value
                         })}
-                        className="flex-1 px-3 py-2 border-2 border-amber-300 dark:border-amber-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-gray-800"
+                        className="flex-1 px-2 py-1.5 text-sm border-2 border-amber-300 dark:border-amber-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-gray-800"
                       />
                     </div>
                   ))}

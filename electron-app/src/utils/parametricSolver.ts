@@ -1,10 +1,22 @@
 // 파라미터 방정식 풀이 유틸리티
 // nerdamer를 사용하여 다중 변수 방정식을 풀이합니다
 
-import nerdamer from 'nerdamer'
-import 'nerdamer/Solve'
-import 'nerdamer/Algebra'
 import { analyzeVariables } from './variableAnalyzer'
+
+// ✅ FIX: 전역 nerdamer 사용 (preload.js에서 로드됨)
+interface NerdamerExpression {
+  toString(): string
+  text(): string
+  evaluate(vars?: Record<string, any>): NerdamerExpression
+  simplify(): NerdamerExpression
+}
+
+interface NerdamerStatic {
+  (expr: string): NerdamerExpression
+  solveEquations(equation: string, variable: string): string[] | string
+}
+
+declare const nerdamer: NerdamerStatic
 
 /**
  * 파라미터 방정식 풀이 결과
