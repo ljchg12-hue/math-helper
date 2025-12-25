@@ -3,7 +3,7 @@
 
 import { analyzeVariables } from './variableAnalyzer'
 
-// ✅ FIX: 전역 nerdamer 사용 (preload.js에서 로드됨)
+// ✅ FIX: 전역 nerdamer 사용 (preload.js에서 global/globalThis에 할당됨)
 interface NerdamerExpression {
   toString(): string
   text(): string
@@ -16,7 +16,9 @@ interface NerdamerStatic {
   solveEquations(equation: string, variable: string): string[] | string
 }
 
-declare const nerdamer: NerdamerStatic
+declare global {
+  var nerdamer: NerdamerStatic
+}
 
 /**
  * 파라미터 방정식 풀이 결과

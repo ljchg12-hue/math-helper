@@ -174,8 +174,14 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
   // ✅ Phase 3: 변수 분석 (다중 변수 감지)
   useEffect(() => {
     if (input.trim() && mode === 'solve') {
-      const analysis = analyzeVariables(input, variable)
+      // ✅ FIX: 변수를 자동 감지하도록 undefined 전달
+      const analysis = analyzeVariables(input)
       setVariableAnalysis(analysis)
+
+      // ✅ FIX: 감지된 주 변수를 variable state에 반영
+      if (analysis.primaryVariable && analysis.primaryVariable !== variable) {
+        setVariable(analysis.primaryVariable)
+      }
 
       // 다중 변수 감지 시 기존 파라미터 값 유지 또는 초기화
       if (analysis.hasMultipleVars) {
@@ -192,7 +198,7 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
       setVariableAnalysis(null)
       setParameterValues({})
     }
-  }, [input, variable, mode])
+  }, [input, mode])
 
   // ✅ 히스토리 저장
   const saveToHistory = useCallback((resultData: CalcResult) => {

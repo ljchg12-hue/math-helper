@@ -17,13 +17,13 @@ try {
   console.log('[Preload] mathjs loaded')
 
   console.log('[Preload] Loading nerdamer (bundled)...')
-  nerdamer = require('nerdamer')
-  console.log('[Preload] nerdamer loaded')
+  nerdamer = require('nerdamer/all.min')  // ✅ FIX: Use all.min for complete bundle
+  console.log('[Preload] nerdamer loaded (all.min)')
 
-  require('nerdamer/Solve')
-  require('nerdamer/Algebra')
-  require('nerdamer/Calculus')
-  console.log('[Preload] nerdamer plugins loaded')
+  // ✅ FIX: Expose nerdamer globally for parametricSolver.ts
+  global.nerdamer = nerdamer
+  globalThis.nerdamer = nerdamer
+  console.log('[Preload] nerdamer exposed globally')
 
   // ✅ Phase 3: robustMathOps 로드 (다중 변수 지원)
   console.log('[Preload] Loading robustMathOps...')
