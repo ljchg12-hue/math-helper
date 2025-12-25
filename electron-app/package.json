@@ -1,7 +1,7 @@
 {
   "name": "math-helper-gui",
-  "version": "1.0.18",
-  "description": "수학 도우미 - 범용 수식 파서 기반 공학용 계산기",
+  "version": "1.0.19",
+  "description": "스마트한 수학 계산기 - 자동 모드 전환, 결과 요약, 카테고리 필터링",
   "author": {
     "name": "Math Helper Team",
     "email": "mathhelper@example.com"
@@ -9,13 +9,13 @@
   "homepage": "https://github.com/mathhelper/app",
   "main": "main.js",
   "scripts": {
-    "dev": "concurrently \"node node_modules/vite/bin/vite.js\" \"electron .\"",
-    "build": "node node_modules/vite/bin/vite.js build && node build-preload.js",
-    "build:win": "npm run build && node node_modules/electron-builder/out/cli/cli.js --win --x64 --dir",
-    "pack:win": "npm run build && node node_modules/electron-builder/out/cli/cli.js --win --x64",
-    "build:linux": "npm run build && node node_modules/electron-builder/out/cli/cli.js --linux --x64 --dir",
-    "pack:linux": "npm run build && node node_modules/electron-builder/out/cli/cli.js --linux --x64",
-    "pack": "npm run build && node node_modules/electron-builder/out/cli/cli.js",
+    "dev": "concurrently \"node node_modules/vite/bin/vite.js\" \"node node_modules/cross-env/src/bin/cross-env.js NODE_ENV=development electron .\"",
+    "build": "node node_modules/cross-env/src/bin/cross-env.js NODE_ENV=production node node_modules/vite/bin/vite.js build && node build-preload.js",
+    "build:win": "npm run build && node node_modules/cross-env/src/bin/cross-env.js NODE_ENV=production node node_modules/electron-builder/out/cli/cli.js --win --x64 --dir",
+    "pack:win": "npm run build && node node_modules/cross-env/src/bin/cross-env.js NODE_ENV=production node node_modules/electron-builder/out/cli/cli.js --win --x64",
+    "build:linux": "npm run build && node node_modules/cross-env/src/bin/cross-env.js NODE_ENV=production node node_modules/electron-builder/out/cli/cli.js --linux --x64 --dir",
+    "pack:linux": "npm run build && node node_modules/cross-env/src/bin/cross-env.js NODE_ENV=production node node_modules/electron-builder/out/cli/cli.js --linux --x64",
+    "pack": "npm run build && node node_modules/cross-env/src/bin/cross-env.js NODE_ENV=production node node_modules/electron-builder/out/cli/cli.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -36,6 +36,7 @@
     "@vitest/ui": "^4.0.16",
     "autoprefixer": "^10.4.20",
     "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
     "electron": "^28.0.0",
     "electron-builder": "^24.9.0",
     "esbuild": "^0.27.2",
