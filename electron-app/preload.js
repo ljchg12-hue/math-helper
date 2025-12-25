@@ -3,7 +3,7 @@
 // ============================================
 console.log('[Preload] Starting math engine initialization...')
 
-let math, nerdamer
+let math, nerdamer, robustMathOps
 let initError = null
 
 try {
@@ -24,6 +24,11 @@ try {
   require('nerdamer/Algebra')
   require('nerdamer/Calculus')
   console.log('[Preload] nerdamer plugins loaded')
+
+  // ✅ Phase 3: robustMathOps 로드 (다중 변수 지원)
+  console.log('[Preload] Loading robustMathOps...')
+  robustMathOps = require('./src/utils/robustMathOps')
+  console.log('[Preload] robustMathOps loaded')
 
   const { create, all } = mathjs
   math = create(all)
@@ -77,6 +82,10 @@ function validateInput(expr, maxLength = 1000) {
 // ============================================
 // 1. 범용 계산 (MathJS)
 // ============================================
+/**
+ * @param {string} expr - 계산할 수식
+ * @returns {{success: boolean, result?: string, error?: string, original?: string, steps?: string[]}}
+ */
 function evaluateExpression(expr) {
   try {
     // ✅ HIGH #3: 입력 검증
@@ -173,13 +182,52 @@ function evaluateExpression(expr) {
 }
 
 // ============================================
-// 2. 방정식 풀이 (Nerdamer)
+// 2. 방정식 풀이 (robustMathOps - 다중 변수 지원)
 // ============================================
-function solveEquation(equation, variable = 'x') {
+/**
+ * @param {string} equation - 풀이할 방정식 (예: "2x + 3 = 7")
+ * @param {string} variable - 변수명 (기본값: 'x')
+ * @param {Object<string, string>} parameterValues - 파라미터 값 (옵션)
+ * @returns {{success: boolean, solutions?: Array, variable?: string, original?: string, steps?: string[], error?: string, isIdentity?: boolean, isContradiction?: boolean}}
+ */
+function solveEquation(equation, variable = 'x', parameterValues = {}) {
   try {
     // ✅ HIGH #3: 입력 검증
     equation = validateInput(equation)
-    variable = validateInput(variable, 1) // 변수명은 1글자만
+    variable = validateInput(variable, 10) // 변수명 최대 10글자
+
+    // ✅ Phase 3: robustMathOps.safeSolve 사용 (다중 변수 지원)
+    if (robustMathOps) {
+      console.log('[solveEquation] Using robustMathOps.safeSolve with parameters:', parameterValues)
+
+      const result = robustMathOps.safeSolve(equation, {
+        targetVariable: variable,
+        parameterValues: parameterValues
+      })
+
+      if (result.success) {
+        // value는 배열 형식
+        const solutions = Array.isArray(result.value) ? result.value : [result.value]
+
+        return {
+          success: true,
+          solutions,
+          variable: result.metadata?.variableAnalysis?.primaryVariable || variable,
+          original: equation,
+          steps: result.steps,
+          // 다중 변수 메타데이터 전달
+          isParametric: result.metadata?.isParametric,
+          generalSolution: result.metadata?.generalSolution,
+          specificSolution: result.metadata?.specificSolution,
+          parameters: result.metadata?.parameters
+        }
+      } else {
+        throw new Error(result.value || '방정식을 풀 수 없습니다')
+      }
+    }
+
+    // ✅ Fallback: robustMathOps 로드 실패 시 기존 로직
+    console.warn('[solveEquation] robustMathOps not available, using legacy nerdamer')
 
     // "2x + 3 = 7" → "2x + 3 - (7)"
     let expr = equation.trim()
@@ -210,9 +258,7 @@ function solveEquation(equation, variable = 'x') {
 
     // ✅ HIGH #1: 항등식/모순 처리
     if (results.length === 0 || (results.length === 1 && results[0] === '')) {
-      // 빈 해 → 항등식 또는 모순 판단
       try {
-        // 좌변 = 우변인지 확인 (항등식)
         const simplified = nerdamer(expr).toString()
         if (simplified === '0' || simplified === 'null') {
           return {
@@ -269,26 +315,34 @@ function solveEquation(equation, variable = 'x') {
 // ============================================
 // 3. 미분 (Nerdamer)
 // ============================================
+/**
+ * @param {string} expr - 미분할 수식
+ * @param {string} variable - 미분 변수 (기본값: 'x')
+ * @param {number} order - 미분 차수 (기본값: 1)
+ * @returns {{success: boolean, result?: string, error?: string, original?: string, variable?: string, order?: number, steps?: string[], engine?: string}}
+ */
 function differentiate(expr, variable = 'x', order = 1) {
   try {
     // ✅ HIGH #3: 입력 검증 추가
     expr = validateInput(expr)
     variable = validateInput(variable, 10)
 
-    let result = nerdamer(expr)
+    // ✅ FIX: nerdamer 1.4.2 전역 함수 사용 (체이닝 메서드 → 전역 함수)
+    let result = expr
 
     // n차 미분
     for (let i = 0; i < order; i++) {
-      result = result.differentiate(variable)
+      result = nerdamer.diff(result, variable).toString()
     }
 
-    const simplified = result.text()
+    const simplified = result
 
     const steps = [
       `원함수: f(${variable}) = ${expr}`,
       order === 1
         ? `1차 도함수: f'(${variable}) = ${simplified}`
-        : `${order}차 도함수: f${'^'.repeat(order)}(${variable}) = ${simplified}`
+        : `${order}차 도함수: f${'^'.repeat(order)}(${variable}) = ${simplified}`,
+      '엔진: nerdamer'
     ]
 
     return {
@@ -297,12 +351,43 @@ function differentiate(expr, variable = 'x', order = 1) {
       original: expr,
       variable,
       order,
-      steps
+      steps,
+      engine: 'nerdamer'
     }
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message || '미분할 수 없습니다'
+  } catch (nerdamerError) {
+    // ✅ mathjs 폴백 시도
+    try {
+      console.warn('[differentiate] nerdamer 실패, mathjs 폴백:', nerdamerError.message)
+
+      // mathjs로 미분 시도
+      let parsed = math.parse(expr)
+
+      for (let i = 0; i < order; i++) {
+        parsed = math.derivative(parsed, variable)
+      }
+
+      const result = parsed.toString()
+
+      return {
+        success: true,
+        result,
+        original: expr,
+        variable,
+        order,
+        steps: [
+          `원함수: f(${variable}) = ${expr}`,
+          order === 1
+            ? `1차 도함수: f'(${variable}) = ${result}`
+            : `${order}차 도함수: f${'^'.repeat(order)}(${variable}) = ${result}`,
+          '엔진: mathjs (폴백)'
+        ],
+        engine: 'mathjs (fallback)'
+      }
+    } catch (mathjsError) {
+      return {
+        success: false,
+        error: `미분할 수 없습니다 (nerdamer: ${nerdamerError.message}, mathjs: ${mathjsError.message})`
+      }
     }
   }
 }
@@ -310,6 +395,14 @@ function differentiate(expr, variable = 'x', order = 1) {
 // ============================================
 // 4. 적분 (Nerdamer)
 // ============================================
+/**
+ * @param {string} expr - 적분할 수식
+ * @param {string} variable - 적분 변수 (기본값: 'x')
+ * @param {boolean} definite - 정적분 여부 (기본값: false)
+ * @param {number|null} lower - 정적분 하한 (기본값: null)
+ * @param {number|null} upper - 정적분 상한 (기본값: null)
+ * @returns {{success: boolean, result?: string, error?: string, definite?: boolean, bounds?: Array, steps?: string[]}}
+ */
 function integrate(expr, variable = 'x', definite = false, lower = null, upper = null) {
   try {
     // ✅ HIGH #3: 입력 검증 추가
@@ -382,11 +475,16 @@ function integrate(expr, variable = 'x', definite = false, lower = null, upper =
 // ============================================
 // 5. 식 간단히
 // ============================================
+/**
+ * @param {string} expr - 간단히 할 수식
+ * @returns {{success: boolean, result?: string, error?: string, original?: string, steps?: string[], engine?: string}}
+ */
 function simplifyExpression(expr) {
   try {
     // ✅ HIGH #3: 입력 검증 추가
     expr = validateInput(expr)
 
+    // nerdamer.simplify() 사용 (체이닝 메서드 .simplify()는 동작하지만 일관성을 위해 유지)
     const simplified = nerdamer(expr).simplify().text()
 
     return {
@@ -395,13 +493,35 @@ function simplifyExpression(expr) {
       original: expr,
       steps: [
         `원래 식: ${expr}`,
-        `간단히: ${simplified}`
-      ]
+        `간단히: ${simplified}`,
+        '엔진: nerdamer'
+      ],
+      engine: 'nerdamer'
     }
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message
+  } catch (nerdamerError) {
+    // ✅ mathjs 폴백 시도
+    try {
+      console.warn('[simplify] nerdamer 실패, mathjs 폴백:', nerdamerError.message)
+
+      const parsed = math.parse(expr)
+      const simplified = math.simplify(parsed).toString()
+
+      return {
+        success: true,
+        result: simplified,
+        original: expr,
+        steps: [
+          `원래 식: ${expr}`,
+          `간단히: ${simplified}`,
+          '엔진: mathjs (폴백)'
+        ],
+        engine: 'mathjs (fallback)'
+      }
+    } catch (mathjsError) {
+      return {
+        success: false,
+        error: `간단히 할 수 없습니다 (nerdamer: ${nerdamerError.message}, mathjs: ${mathjsError.message})`
+      }
     }
   }
 }
@@ -409,12 +529,17 @@ function simplifyExpression(expr) {
 // ============================================
 // 6. 인수분해
 // ============================================
+/**
+ * @param {string} expr - 인수분해할 수식
+ * @returns {{success: boolean, result?: string, error?: string, original?: string, steps?: string[], engine?: string}}
+ */
 function factorExpression(expr) {
   try {
     // ✅ HIGH #3: 입력 검증 추가
     expr = validateInput(expr)
 
-    const factored = nerdamer(expr).factor().text()
+    // ✅ FIX: nerdamer 1.4.2 전역 함수 사용 (체이닝 메서드 → 전역 함수)
+    const factored = nerdamer.factor(expr).toString()
 
     return {
       success: true,
@@ -422,13 +547,37 @@ function factorExpression(expr) {
       original: expr,
       steps: [
         `원래 식: ${expr}`,
-        `인수분해: ${factored}`
-      ]
+        `인수분해: ${factored}`,
+        '엔진: nerdamer'
+      ],
+      engine: 'nerdamer'
     }
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message
+  } catch (nerdamerError) {
+    // ✅ mathjs 폴백 시도
+    try {
+      console.warn('[factor] nerdamer 실패, mathjs 폴백:', nerdamerError.message)
+
+      // mathjs는 직접적인 factor 함수를 제공하지 않으므로 simplify 사용
+      const parsed = math.parse(expr)
+      const simplified = math.simplify(parsed).toString()
+
+      return {
+        success: true,
+        result: simplified,
+        original: expr,
+        steps: [
+          `원래 식: ${expr}`,
+          `간단히 (인수분해 대체): ${simplified}`,
+          '엔진: mathjs (폴백 - simplify 사용)'
+        ],
+        engine: 'mathjs (fallback)',
+        warning: 'mathjs는 인수분해를 지원하지 않아 simplify로 대체했습니다'
+      }
+    } catch (mathjsError) {
+      return {
+        success: false,
+        error: `인수분해할 수 없습니다 (nerdamer: ${nerdamerError.message}, mathjs: ${mathjsError.message})`
+      }
     }
   }
 }
@@ -436,12 +585,17 @@ function factorExpression(expr) {
 // ============================================
 // 7. 전개
 // ============================================
+/**
+ * @param {string} expr - 전개할 수식
+ * @returns {{success: boolean, result?: string, error?: string, original?: string, steps?: string[], engine?: string}}
+ */
 function expandExpression(expr) {
   try {
     // ✅ HIGH #3: 입력 검증 추가
     expr = validateInput(expr)
 
-    const expanded = nerdamer(expr).expand().text()
+    // ✅ FIX: nerdamer 1.4.2 전역 함수 사용 (체이닝 메서드 → 전역 함수)
+    const expanded = nerdamer.expand(expr).toString()
 
     return {
       success: true,
@@ -449,13 +603,36 @@ function expandExpression(expr) {
       original: expr,
       steps: [
         `원래 식: ${expr}`,
-        `전개: ${expanded}`
-      ]
+        `전개: ${expanded}`,
+        '엔진: nerdamer'
+      ],
+      engine: 'nerdamer'
     }
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message
+  } catch (nerdamerError) {
+    // ✅ mathjs 폴백 시도
+    try {
+      console.warn('[expand] nerdamer 실패, mathjs 폴백:', nerdamerError.message)
+
+      // mathjs로 전개 시도
+      const parsed = math.parse(expr)
+      const expanded = math.simplify(parsed, {}, { exactFractions: false }).toString()
+
+      return {
+        success: true,
+        result: expanded,
+        original: expr,
+        steps: [
+          `원래 식: ${expr}`,
+          `전개 (simplify 사용): ${expanded}`,
+          '엔진: mathjs (폴백)'
+        ],
+        engine: 'mathjs (fallback)'
+      }
+    } catch (mathjsError) {
+      return {
+        success: false,
+        error: `전개할 수 없습니다 (nerdamer: ${nerdamerError.message}, mathjs: ${mathjsError.message})`
+      }
     }
   }
 }
@@ -463,6 +640,12 @@ function expandExpression(expr) {
 // ============================================
 // 8. 행렬 연산
 // ============================================
+/**
+ * @param {string} operation - 연산 유형 ('det', 'inv', 'transpose', 'add', 'subtract', 'multiply', 'eigenvalues')
+ * @param {Array<Array<number>>} matrixA - 첫 번째 행렬
+ * @param {Array<Array<number>>|null} matrixB - 두 번째 행렬 (일부 연산에 필요)
+ * @returns {{success: boolean, result?: any, error?: string, operation?: string, steps?: string[]}}
+ */
 function matrixCalculate(operation, matrixA, matrixB = null) {
   try {
     // ✅ HIGH #3: operation 파라미터 검증 추가
@@ -543,6 +726,10 @@ function matrixCalculate(operation, matrixA, matrixB = null) {
 // ============================================
 // 9. 통계 계산
 // ============================================
+/**
+ * @param {Array<number>} data - 통계를 계산할 데이터 배열
+ * @returns {{success: boolean, result?: object, error?: string, steps?: string[]}}
+ */
 function calculateStatistics(data) {
   try {
     // ✅ HIGH #3: 배열 검증 강화
@@ -598,6 +785,13 @@ function calculateStatistics(data) {
 // ============================================
 // 10. 극한
 // ============================================
+/**
+ * @param {string} expr - 극한을 계산할 수식
+ * @param {string} variable - 변수명
+ * @param {string|number} approach - 접근값 (숫자 또는 'infinity', '-infinity')
+ * @param {string} direction - 방향 ('left', 'right', 'both') (기본값: 'both')
+ * @returns {{success: boolean, result?: string, error?: string, steps?: string[]}}
+ */
 function calculateLimit(expr, variable, approach, direction = 'both') {
   try {
     // ✅ HIGH #3: 입력 검증 추가

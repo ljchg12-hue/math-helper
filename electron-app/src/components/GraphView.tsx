@@ -7,7 +7,8 @@ import {
   calculateDomain,
   calculateRange,
   generateGraphTitle,
-  isGraphable
+  isGraphable,
+  extractVariables
 } from '../utils/graphHelper'
 
 interface GraphViewProps {
@@ -31,7 +32,16 @@ export default function GraphView({
   useEffect(() => {
     if (!show || !graphRef.current) return
 
-    // 그래프 가능 여부 확인
+    // 변수 개수 확인
+    const variables = extractVariables(expression)
+
+    // ✅ 변수가 없는 경우: 조용히 숨김 (상수는 그래프 불필요)
+    if (variables.length === 0) {
+      setError(null)  // 에러 메시지 표시 안 함
+      return
+    }
+
+    // 그래프 가능 여부 확인 (1~2개 변수만)
     if (!isGraphable(expression, mode)) {
       setError('이 수식은 그래프로 표현할 수 없습니다')
       return
@@ -63,9 +73,11 @@ export default function GraphView({
           {
             fn: plotExpr,
             color: '#2563eb',
-            graphType: 'polyline'
+            graphType: 'polyline',
+            nSamples: 1000  // ✅ 더 부드러운 곡선 (기본 200 → 1000)
           }
-        ]
+        ],
+        disableZoom: false  // ✅ 확대/축소 활성화
       }
 
       // solve 모드인 경우 해를 점으로 표시
@@ -80,7 +92,7 @@ export default function GraphView({
       // 그래프 그리기
       functionPlot(options)
     } catch (err) {
-      console.error('그래프 생성 오류:', err)
+      console.warn('그래프 생성 오류:', err)
       setError('그래프를 생성할 수 없습니다')
     }
   }, [expression, mode, variable, result, show])

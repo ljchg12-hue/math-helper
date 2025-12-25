@@ -1,13 +1,19 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Zap } from 'lucide-react'
 import Card from './Card'
 import MathKeyboard from './MathKeyboard'
 import CalculationHistory from './CalculationHistory'
 import FavoritesList from './FavoritesList'
 import GraphView from './GraphView'
+import SmartResultView from './SmartResultView'
 import { HistoryItem } from '../types/history'
 import { FavoriteItem } from '../types/favorites'
 import { getItem, setItem, removeItem } from '../utils/safeStorage'
+import { getAvailableModes, getCalculateAllModes } from '../types/categoryModeMapping'
+import { parseInputIntent, shouldAutoSwitch, type ParsedInput } from '../utils/smartParser'
+import { getUserFriendlyError, formatErrorMessage } from '../utils/errorMessages'
+import { analyzeVariables, type VariableAnalysis } from '../utils/variableAnalyzer'
 
 // ✅ CalculatorMode는 types.d.ts에서 global 정의됨
 
@@ -33,9 +39,11 @@ interface UniversalCalculatorProps {
   onInputUsed?: () => void
   // ✅ Phase 2: EngineeringCalculator에서 강제 모드 설정 가능
   forceMode?: CalculatorMode
+  // ✅ Phase 2: 카테고리별 스마트 필터링
+  currentCategory?: string
 }
 
-export default function UniversalCalculator({ initialInput, onInputUsed, forceMode }: UniversalCalculatorProps = {}) {
+export default function UniversalCalculator({ initialInput, onInputUsed, forceMode, currentCategory }: UniversalCalculatorProps = {}) {
   const { t } = useTranslation()
   const [mode, setMode] = useState<CalculatorMode>(forceMode || 'evaluate')
   const [input, setInput] = useState('')
@@ -55,8 +63,18 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
   const [favorites, setFavorites] = useState<FavoriteItem[]>([])
   // ✅ Phase 3: 그래프 표시 기능
   const [showGraph, setShowGraph] = useState(true)
+  // ✅ 스마트 입력 파싱: 자동 모드 전환
+  const [autoSwitched, setAutoSwitched] = useState(false)
+  const [parsedIntent, setParsedIntent] = useState<ParsedInput | null>(null)
+  // ✅ 토스트 알림 (자동 전환 피드백)
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  // ✅ Phase 3: 다중 변수 지원
+  const [parameterValues, setParameterValues] = useState<Record<string, string>>({})
+  const [variableAnalysis, setVariableAnalysis] = useState<VariableAnalysis | null>(null)
 
-  const modes: Mode[] = [
+  // ✅ 전체 모드 정의
+  const allModes: Mode[] = [
     {
       id: 'evaluate',
       label: t('modes.evaluate'),
@@ -122,6 +140,10 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
     },
   ]
 
+  // ✅ 카테고리별 필터링 적용
+  const availableModeIds = getAvailableModes(currentCategory)
+  const modes = allModes.filter(m => availableModeIds.includes(m.id) || m.id === 'calculateAll')
+
   const currentMode = modes.find(m => m.id === mode) || modes[0]
 
   // ✅ 히스토리 로드 (초기화)
@@ -148,6 +170,29 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
       }
     }
   }, [initialInput, onInputUsed])
+
+  // ✅ Phase 3: 변수 분석 (다중 변수 감지)
+  useEffect(() => {
+    if (input.trim() && mode === 'solve') {
+      const analysis = analyzeVariables(input, variable)
+      setVariableAnalysis(analysis)
+
+      // 다중 변수 감지 시 기존 파라미터 값 유지 또는 초기화
+      if (analysis.hasMultipleVars) {
+        // 새로운 파라미터가 추가되면 빈 값으로 초기화
+        setParameterValues(prev => {
+          const newParams: Record<string, string> = {}
+          for (const param of analysis.parameters) {
+            newParams[param] = prev[param] || '' // 기존 값 유지 또는 빈 문자열
+          }
+          return newParams
+        })
+      }
+    } else {
+      setVariableAnalysis(null)
+      setParameterValues({})
+    }
+  }, [input, variable, mode])
 
   // ✅ 히스토리 저장
   const saveToHistory = useCallback((resultData: CalcResult) => {
@@ -237,6 +282,47 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
     return favorites.some(fav => fav.id === historyId)
   }, [favorites])
 
+  // ✅ 토스트 알림 표시
+  const showToastNotification = useCallback((message: string) => {
+    setToastMessage(message)
+    setShowToast(true)
+    // 3초 후 자동 숨김
+    setTimeout(() => {
+      setShowToast(false)
+    }, 3000)
+  }, [])
+
+  // ✅ 스마트 입력 처리: 실시간 파싱 및 자동 모드 전환
+  const handleInputChange = useCallback((newInput: string) => {
+    setInput(newInput)
+    setError('') // 입력 변경 시 에러 초기화
+
+    // forceMode가 설정된 경우 자동 전환 비활성화
+    if (forceMode) {
+      setAutoSwitched(false)
+      setParsedIntent(null)
+      return
+    }
+
+    // 입력 의도 파싱
+    const parsed = parseInputIntent(newInput)
+    setParsedIntent(parsed)
+
+    // 자동 전환 조건 확인
+    if (shouldAutoSwitch(parsed, mode)) {
+      const targetMode = allModes.find(m => m.id === parsed.suggestedMode)
+      setMode(parsed.suggestedMode)
+      setAutoSwitched(true)
+
+      // 토스트 알림 표시
+      if (targetMode) {
+        showToastNotification(`${targetMode.icon} ${targetMode.label} 모드로 자동 전환됨`)
+      }
+    } else {
+      setAutoSwitched(false)
+    }
+  }, [forceMode, mode, allModes, showToastNotification])
+
   const handleCalculate = async () => {
     // ✅ Phase 2: 중복 클릭 방지
     if (isCalculating) return
@@ -258,17 +344,27 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
       return
     }
 
+    // ✅ 계산 전 자동 모드 전환 (필요 시)
+    const parsed = parsedIntent || parseInputIntent(input)
+    if (!forceMode && shouldAutoSwitch(parsed, mode)) {
+      setMode(parsed.suggestedMode)
+      setAutoSwitched(true)
+    }
+
     try {
       let res
 
-      // ✅ Phase 2: 통합 계산 모드
+      // ✅ Phase 2: 통합 계산 모드 (카테고리별 필터링 적용)
       if (mode === 'calculateAll') {
         const startTime = performance.now()
         const results: UnifiedCalcResult[] = []
 
-        const modeExecutors = [
+        // ✅ 카테고리별로 실행할 모드만 선택
+        const executeModesIds = getCalculateAllModes(currentCategory)
+
+        const allExecutors = [
           { mode: 'evaluate' as CalculatorMode, executor: () => window.mathAPI.evaluate(input) },
-          { mode: 'solve' as CalculatorMode, executor: () => window.mathAPI.solve(input, variable) },
+          { mode: 'solve' as CalculatorMode, executor: () => window.mathAPI.solve(input, variable, parameterValues) },
           { mode: 'differentiate' as CalculatorMode, executor: () => window.mathAPI.differentiate(input, variable) },
           { mode: 'integrate' as CalculatorMode, executor: () => window.mathAPI.integrate(input, variable) },
           { mode: 'simplify' as CalculatorMode, executor: () => window.mathAPI.simplify(input) },
@@ -276,6 +372,9 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
           { mode: 'expand' as CalculatorMode, executor: () => window.mathAPI.expand(input) },
           { mode: 'limit' as CalculatorMode, executor: () => window.mathAPI.limit(input, variable, limitValue, limitDirection) },
         ]
+
+        // ✅ 카테고리에 해당하는 모드만 실행
+        const modeExecutors = allExecutors.filter(exec => executeModesIds.includes(exec.mode))
 
         for (const { mode: execMode, executor } of modeExecutors) {
           const modeInfo = modes.find(m => m.id === execMode)!
@@ -335,7 +434,7 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
             res = window.mathAPI.evaluate(input)
             break
           case 'solve':
-            res = window.mathAPI.solve(input, variable)
+            res = window.mathAPI.solve(input, variable, parameterValues)
             break
           case 'differentiate':
             res = window.mathAPI.differentiate(input, variable)
@@ -365,7 +464,13 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
         }
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '오류가 발생했습니다')
+      // ✅ 사용자 친화적 에러 메시지
+      const parsed = parsedIntent || parseInputIntent(input)
+      const friendlyError = getUserFriendlyError(
+        err instanceof Error ? err : new Error('오류가 발생했습니다'),
+        parsed.intent
+      )
+      setError(formatErrorMessage(friendlyError, false))
     } finally {
       setIsCalculating(false)
     }
@@ -528,6 +633,12 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
             <span className="ml-2 text-xs font-bold text-blue-600">
               [{t('ui.currentMode')}: {currentMode.label}]
             </span>
+            {autoSwitched && parsedIntent && (
+              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold text-green-700 bg-green-100 rounded-full animate-pulse">
+                <Zap size={12} />
+                {currentMode.icon} {currentMode.label} 자동 적용
+              </span>
+            )}
             <span className="ml-2 text-xs text-gray-500">
               {t('ui.example')}: {currentMode.example}
             </span>
@@ -535,7 +646,7 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
           <textarea
             ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
@@ -609,6 +720,62 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
               )}
             </div>
           )}
+
+          {/* ✅ Phase 3: 다중 변수 파라미터 입력 UI */}
+          {mode === 'solve' && variableAnalysis && variableAnalysis.hasMultipleVars && (
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-lg border-2 border-amber-200 dark:border-amber-700">
+              <h3 className="text-sm font-semibold mb-2 text-amber-900 dark:text-amber-100 flex items-center gap-2">
+                <span>📐</span>
+                <span>다중 변수 감지됨</span>
+              </h3>
+
+              {/* 주 변수 표시 */}
+              <div className="mb-3 p-2 bg-white/50 dark:bg-gray-800/50 rounded border border-amber-300 dark:border-amber-600">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="font-semibold">해를 구할 변수:</span>{' '}
+                  <span className="font-mono text-blue-600 dark:text-blue-400 text-lg">{variableAnalysis.primaryVariable}</span>
+                </p>
+              </div>
+
+              {/* 파라미터 입력 필드들 */}
+              <div className="space-y-2">
+                <label className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                  파라미터 값 (선택사항):
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {variableAnalysis.parameters.map(param => (
+                    <div key={param} className="flex items-center gap-2">
+                      <span className="w-10 text-right font-mono text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        {param} =
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="값 또는 수식"
+                        value={parameterValues[param] || ''}
+                        onChange={(e) => setParameterValues({
+                          ...parameterValues,
+                          [param]: e.target.value
+                        })}
+                        className="flex-1 px-3 py-2 border-2 border-amber-300 dark:border-amber-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-gray-800"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 설명 텍스트 */}
+              <div className="mt-3 text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                <p className="flex items-start gap-1">
+                  <span>💡</span>
+                  <span>파라미터 값을 입력하면 구체적인 해를 계산합니다.</span>
+                </p>
+                <p className="flex items-start gap-1">
+                  <span>📝</span>
+                  <span>비워두면 <strong>{variableAnalysis.primaryVariable}</strong>에 대한 일반 해를 표시합니다.</span>
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 가상 키보드 */}
@@ -642,123 +809,20 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
         {/* 결과 표시 */}
         {result && (
           <>
-            {/* ✅ Phase 2: 통합 계산 결과 UI */}
+            {/* ✅ Phase 2: 통합 계산 결과 UI - 스마트 결과 뷰 */}
             {mode === 'calculateAll' && 'results' in result ? (
-              <div className="space-y-3">
-                {/* 통합 결과 요약 헤더 */}
-                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
-                  <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
-                    <span className="text-2xl">⚡</span>
-                    {t('ui.unifiedResults')}
-                  </h3>
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <div className="flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full">
-                      <span className="text-green-700 dark:text-green-400 font-bold">✅ {t('ui.successCount')}</span>
-                      <span className="text-green-900 dark:text-green-200 font-extrabold text-lg">{result.successCount}</span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 rounded-full">
-                      <span className="text-red-700 dark:text-red-400 font-bold">❌ {t('ui.failureCount')}</span>
-                      <span className="text-red-900 dark:text-red-200 font-extrabold text-lg">{result.failureCount}</span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 dark:bg-gray-900/30 rounded-full">
-                      <span className="text-gray-700 dark:text-gray-400 font-bold">⏱️ {t('ui.totalTime')}</span>
-                      <span className="text-gray-900 dark:text-gray-200 font-extrabold text-lg">{result.totalTime.toFixed(1)}ms</span>
-                    </div>
-                  </div>
-                  {result.failureCount > 0 && (
-                    <p className="mt-2 text-xs text-orange-700 dark:text-orange-400">
-                      ⚠️ {result.failureCount}{t('ui.partialFailureWarning')}
-                    </p>
-                  )}
-                </div>
-
-                {/* 모드별 결과 카드 그리드 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {result.results.map((modeResult, idx) => (
-                    <div
-                      key={idx}
-                      className={`p-4 border-2 rounded-lg transition-all ${
-                        modeResult.success
-                          ? 'bg-green-50 dark:bg-green-900/10 border-green-300 dark:border-green-800 hover:shadow-md'
-                          : 'bg-gray-50 dark:bg-gray-900/10 border-gray-300 dark:border-gray-700 opacity-70'
-                      }`}
-                    >
-                      {/* 모드 헤더 */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">{modeResult.icon}</span>
-                          <span className={`font-bold text-sm ${
-                            modeResult.success
-                              ? 'text-green-900 dark:text-green-100'
-                              : 'text-gray-600 dark:text-gray-400'
-                          }`}>
-                            {modeResult.modeLabel}
-                          </span>
-                        </div>
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                          modeResult.success
-                            ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'
-                            : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                        }`}>
-                          {modeResult.success ? '✅' : '❌'}
-                        </span>
-                      </div>
-
-                      {/* 결과 내용 */}
-                      {modeResult.success && modeResult.result ? (
-                        <div className="space-y-2">
-                          {/* 결과값 */}
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded border border-green-200 dark:border-green-900">
-                            <p className="text-xs text-green-700 dark:text-green-400 mb-1 font-medium">결과:</p>
-                            <p className="font-mono text-sm font-bold text-green-900 dark:text-green-100 break-all">
-                              {modeResult.mode === 'solve' && modeResult.result.solutions !== undefined
-                                ? modeResult.result.isIdentity
-                                  ? `항등식 (모든 ${modeResult.result.variable} 값)`
-                                  : modeResult.result.solutions.length === 0
-                                    ? '해 없음'
-                                    : modeResult.result.solutions.length === 1
-                                      ? `${modeResult.result.variable} = ${modeResult.result.solutions[0]}`
-                                      : `${modeResult.result.variable} = ${modeResult.result.solutions.join(', ')}`
-                                : modeResult.result.result || t('ui.notApplicable')}
-                            </p>
-                          </div>
-
-                          {/* 실행 시간 */}
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            ⏱️ {modeResult.executionTime.toFixed(1)}ms
-                          </p>
-
-                          {/* 풀이 과정 (있는 경우) */}
-                          {modeResult.result.steps && modeResult.result.steps.length > 0 && (
-                            <details className="text-xs">
-                              <summary className="cursor-pointer text-blue-700 dark:text-blue-400 font-medium hover:underline">
-                                📝 풀이 과정 ({modeResult.result.steps.length}단계)
-                              </summary>
-                              <ol className="mt-2 space-y-1 text-gray-700 dark:text-gray-300 pl-4">
-                                {modeResult.result.steps.map((step: string, i: number) => (
-                                  <li key={i} className="font-mono">
-                                    {i + 1}. {step}
-                                  </li>
-                                ))}
-                              </ol>
-                            </details>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded border border-gray-300 dark:border-gray-700">
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">에러:</p>
-                          <p className="text-xs text-red-700 dark:text-red-400 font-mono break-all">
-                            {modeResult.error || t('errors.cannotCalculate')}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                            ⏱️ {modeResult.executionTime.toFixed(1)}ms
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <SmartResultView
+                results={result.results}
+                input={input}
+                onModeClick={(clickedMode) => {
+                  // 클릭한 모드로 전환하고 해당 결과 표시
+                  const modeResult = result.results.find(r => r.mode === clickedMode)
+                  if (modeResult && modeResult.result) {
+                    setMode(clickedMode)
+                    setResult(modeResult.result)
+                  }
+                }}
+              />
             ) : (
               /* 기존 단일 모드 결과 UI */
               <div className="space-y-3">
@@ -826,6 +890,16 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
               result={result}
               show={showGraph}
             />
+          </div>
+        )}
+
+        {/* ✅ 토스트 알림 (자동 전환 피드백) */}
+        {showToast && (
+          <div className="fixed bottom-4 right-4 z-50 animate-slideIn">
+            <div className="flex items-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg shadow-lg">
+              <Zap size={18} className="animate-pulse" />
+              <span className="font-medium">{toastMessage}</span>
+            </div>
           </div>
         )}
       </div>

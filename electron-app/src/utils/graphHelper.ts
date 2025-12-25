@@ -12,15 +12,31 @@ export function extractVariables(expression: string): string[] {
 
 /**
  * 수식이 그래프로 표현 가능한지 확인합니다
+ *
+ * @param expression - 확인할 수식
+ * @param mode - 계산 모드
+ * @returns 그래프 가능 여부
+ *
+ * @example
+ * isGraphable("sin(x)", "evaluate") // → true (1변수)
+ * isGraphable("x*y", "evaluate") // → true (2변수, 추후 3D 지원)
+ * isGraphable("sin(3)", "evaluate") // → false (변수 없음)
+ * isGraphable("x*y*z", "evaluate") // → false (3변수는 미지원)
  */
 export function isGraphable(expression: string, mode: string): boolean {
-  // 방정식이 아니고 변수가 있어야 함
+  // 방정식은 solve 모드에서만
   if (expression.includes('=') && mode !== 'solve') return false
 
   const variables = extractVariables(expression)
 
-  // 변수가 없거나 2개 이상이면 그래프 불가
-  if (variables.length === 0 || variables.length > 2) return false
+  // ✅ 수정: 1~2개 변수만 그래프 가능
+  // - 0개: 상수는 그래프 불가 (점 하나만 있음)
+  // - 1개: y = f(x) 2D 그래프 ✅
+  // - 2개: z = f(x,y) 3D 그래프 또는 등고선 (추후 구현) ✅
+  // - 3개+: 미지원 ❌
+  if (variables.length < 1 || variables.length > 2) {
+    return false
+  }
 
   return true
 }

@@ -404,6 +404,7 @@ export default function CategoryCalculator({ initialInput, onInputUsed }: Catego
         key={selectedCategory}
         initialInput={initialInput}
         onInputUsed={onInputUsed}
+        currentCategory={selectedCategory}
       />
     </div>
   )
