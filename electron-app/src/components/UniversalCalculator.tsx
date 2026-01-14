@@ -14,6 +14,7 @@ import { getAvailableModes, getCalculateAllModes } from '../types/categoryModeMa
 import { parseInputIntent, shouldAutoSwitch, type ParsedInput } from '../utils/smartParser'
 import { getUserFriendlyError, formatErrorMessage } from '../utils/errorMessages'
 import { analyzeVariables, type VariableAnalysis } from '../utils/variableAnalyzer'
+import { validateInput, validateInputRealtime, type ValidationResult } from '../utils/inputValidation'
 
 // ✅ CalculatorMode는 types.d.ts에서 global 정의됨
 
@@ -72,6 +73,8 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
   // ✅ Phase 3: 다중 변수 지원
   const [parameterValues, setParameterValues] = useState<Record<string, string>>({})
   const [variableAnalysis, setVariableAnalysis] = useState<VariableAnalysis | null>(null)
+  // ✅ v1.0.25: 입력 검증 경고
+  const [inputWarning, setInputWarning] = useState<string>('')
 
   // ✅ 전체 모드 정의
   const allModes: Mode[] = [
@@ -171,20 +174,22 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
     }
   }, [initialInput, onInputUsed])
 
-  // ✅ Phase 3: 변수 분석 (다중 변수 감지)
+  // ✅ Phase 3: 변수 분석 (다중 변수 감지) - v1.0.29: 모든 변수 관련 모드에서 작동
+  const variableRelatedModes: CalculatorMode[] = ['solve', 'differentiate', 'integrate', 'limit', 'calculateAll']
+
   useEffect(() => {
-    if (input.trim() && mode === 'solve') {
-      // ✅ FIX: 변수를 자동 감지하도록 undefined 전달
-      const analysis = analyzeVariables(input)
+    if (input.trim() && variableRelatedModes.includes(mode)) {
+      // ✅ FIX: 사용자가 선택한 변수를 preferredVariable로 전달
+      const analysis = analyzeVariables(input, variable)
       setVariableAnalysis(analysis)
 
-      // ✅ FIX: 감지된 주 변수를 variable state에 반영
-      if (analysis.primaryVariable && analysis.primaryVariable !== variable) {
+      // ✅ v1.0.29: 초기에만 자동 선택, 사용자 선택은 유지
+      if (analysis.primaryVariable && !analysis.allVariables.includes(variable)) {
         setVariable(analysis.primaryVariable)
       }
 
       // 다중 변수 감지 시 기존 파라미터 값 유지 또는 초기화
-      if (analysis.hasMultipleVars) {
+      if (analysis.hasMultipleVars && mode === 'solve') {
         // 새로운 파라미터가 추가되면 빈 값으로 초기화
         setParameterValues(prev => {
           const newParams: Record<string, string> = {}
@@ -303,6 +308,10 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
     setInput(newInput)
     setError('') // 입력 변경 시 에러 초기화
 
+    // ✅ v1.0.25: 실시간 입력 검증
+    const validation = validateInputRealtime(newInput, mode)
+    setInputWarning(validation.warning || '')
+
     // forceMode가 설정된 경우 자동 전환 비활성화
     if (forceMode) {
       setAutoSwitched(false)
@@ -324,10 +333,53 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
       if (targetMode) {
         showToastNotification(`${targetMode.icon} ${targetMode.label} 모드로 자동 전환됨`)
       }
+
+      // ✅ v1.0.25: 모드 전환 시 경고 재검증
+      const newValidation = validateInputRealtime(newInput, parsed.suggestedMode)
+      setInputWarning(newValidation.warning || '')
     } else {
       setAutoSwitched(false)
     }
   }, [forceMode, mode, allModes, showToastNotification])
+
+  // ✅ v1.0.29: 스마트 모드 필터링 - 입력에 적합한 모드만 실행
+  const shouldRunMode = useCallback((inputExpr: string, targetMode: CalculatorMode): boolean => {
+    const hasEquals = inputExpr.includes('=')
+    const hasVariable = /[a-zA-Z]/.test(inputExpr.replace(/sin|cos|tan|log|ln|sqrt|pi|e\b/gi, ''))
+    const isNumericOnly = !hasVariable && !hasEquals
+    const hasDerivativeKeywords = /d\/d|미분|derivative/i.test(inputExpr)
+    const hasIntegralKeywords = /∫|적분|integral/i.test(inputExpr)
+    const hasLimitKeywords = /lim|극한|limit|→/i.test(inputExpr)
+
+    switch (targetMode) {
+      case 'evaluate':
+        // 등호가 있으면 evaluate는 의미 없음
+        return !hasEquals
+      case 'solve':
+        // 등호가 있거나 변수가 있어야 방정식 풀이 가능
+        return hasEquals || hasVariable
+      case 'differentiate':
+        // 변수가 있어야 미분 가능, 순수 숫자는 제외
+        return hasVariable && !isNumericOnly
+      case 'integrate':
+        // 변수가 있어야 적분 가능
+        return hasVariable && !isNumericOnly
+      case 'simplify':
+        // 변수가 있거나 복잡한 수식일 때만
+        return hasVariable || inputExpr.includes('^') || inputExpr.includes('*')
+      case 'factor':
+        // 변수가 있고 다항식일 때만
+        return hasVariable && !hasEquals
+      case 'expand':
+        // 괄호가 있고 변수가 있을 때만
+        return hasVariable && (inputExpr.includes('(') || inputExpr.includes('^'))
+      case 'limit':
+        // 변수가 있어야 극한 계산 가능
+        return hasVariable && !isNumericOnly
+      default:
+        return true
+    }
+  }, [])
 
   const handleCalculate = async () => {
     // ✅ Phase 2: 중복 클릭 방지
@@ -335,6 +387,7 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
 
     setError('')
     setResult(null)
+    setInputWarning('') // ✅ v1.0.25: 경고 초기화
     setIsCalculating(true)
 
     // ✅ Phase 1: mathAPI 존재 확인
@@ -346,6 +399,17 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
 
     if (!input.trim()) {
       setError(t('errors.emptyInput'))
+      setIsCalculating(false)
+      return
+    }
+
+    // ✅ v1.0.25: 입력 사전 검증
+    const validation = validateInput(input, mode)
+    if (!validation.valid) {
+      setError(validation.error || '입력 오류')
+      if (validation.suggestion) {
+        setInputWarning(`💡 ${validation.suggestion}`)
+      }
       setIsCalculating(false)
       return
     }
@@ -379,8 +443,10 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
           { mode: 'limit' as CalculatorMode, executor: () => window.mathAPI.limit(input, variable, limitValue, limitDirection) },
         ]
 
-        // ✅ 카테고리에 해당하는 모드만 실행
-        const modeExecutors = allExecutors.filter(exec => executeModesIds.includes(exec.mode))
+        // ✅ v1.0.29: 카테고리 + 입력 적합성 기반 스마트 필터링
+        const modeExecutors = allExecutors.filter(exec =>
+          executeModesIds.includes(exec.mode) && shouldRunMode(input, exec.mode)
+        )
 
         for (const { mode: execMode, executor } of modeExecutors) {
           const modeInfo = modes.find(m => m.id === execMode)!
@@ -660,9 +726,19 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
               }
             }}
             placeholder={currentMode.example}
-            className="w-full px-4 py-3 text-lg font-mono border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            className={`w-full px-4 py-3 text-lg font-mono border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors ${
+              inputWarning ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/10' : 'border-gray-300'
+            }`}
             rows={2}
           />
+
+          {/* ✅ v1.0.25: 입력 경고 표시 */}
+          {inputWarning && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg text-amber-700 dark:text-amber-300 text-sm animate-fadeIn">
+              <span>⚠️</span>
+              <span>{inputWarning}</span>
+            </div>
+          )}
 
           {(mode === 'solve' || mode === 'differentiate' || mode === 'integrate' || mode === 'limit') && (
             <div className="space-y-2">
@@ -727,6 +803,37 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
             </div>
           )}
 
+          {/* ✅ v1.0.29: 다변수 감지 시 변수 선택 칩 UI */}
+          {variableAnalysis && variableAnalysis.hasMultipleVars && variableRelatedModes.includes(mode) && (
+            <div className="bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 p-3 rounded-lg border-2 border-cyan-200 dark:border-cyan-700">
+              <h3 className="text-sm font-semibold mb-2 text-cyan-900 dark:text-cyan-100 flex items-center gap-2">
+                <span>🎯</span>
+                <span>변수 선택</span>
+                <span className="text-xs font-normal text-cyan-600 dark:text-cyan-400">
+                  (어떤 변수에 대해 {mode === 'solve' ? '풀지' : mode === 'differentiate' ? '미분할지' : mode === 'integrate' ? '적분할지' : '계산할지'} 선택)
+                </span>
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {variableAnalysis.allVariables.map(v => (
+                  <button
+                    key={v}
+                    onClick={() => setVariable(v)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                      variable === v
+                        ? 'bg-cyan-600 text-white shadow-md ring-2 ring-cyan-400'
+                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-cyan-100 dark:hover:bg-cyan-800'
+                    }`}
+                  >
+                    {variable === v ? `✓ ${v}` : v}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-cyan-700 dark:text-cyan-400">
+                💡 감지된 변수: {variableAnalysis.allVariables.join(', ')} | 현재 선택: <strong>{variable}</strong>
+              </p>
+            </div>
+          )}
+
           {/* ✅ Phase 3: 파라미터 입력 UI - 항상 표시 (a~f) */}
           {mode === 'solve' && (
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-lg border-2 border-amber-200 dark:border-amber-700">
@@ -767,10 +874,13 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
                   <span>💡</span>
                   <span>파라미터 값을 입력하면 구체적인 해를 계산합니다.</span>
                 </p>
-                <p className="flex items-start gap-1">
-                  <span>📝</span>
-                  <span>비워두면 <strong>{variableAnalysis.primaryVariable}</strong>에 대한 일반 해를 표시합니다.</span>
-                </p>
+                {/* ✅ v1.0.25: null 체크 추가 */}
+                {variableAnalysis && (
+                  <p className="flex items-start gap-1">
+                    <span>📝</span>
+                    <span>비워두면 <strong>{variableAnalysis.primaryVariable}</strong>에 대한 일반 해를 표시합니다.</span>
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -866,8 +976,8 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
           </>
         )}
 
-        {/* ✅ Phase 3: 그래프 표시 */}
-        {result && !('results' in result) && (
+        {/* ✅ Phase 3: 그래프 표시 - 통합 모드에서도 그래프 표시하도록 수정 */}
+        {result && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
@@ -877,15 +987,15 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
                   onChange={(e) => setShowGraph(e.target.checked)}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                그래프 표시
+                📈 그래프 표시
               </label>
             </div>
 
             <GraphView
               expression={input}
-              mode={mode}
+              mode={mode === 'calculateAll' ? 'evaluate' : mode}
               variable={variable}
-              result={result}
+              result={'results' in result ? result.results.find((r: any) => r.success)?.result : result}
               show={showGraph}
             />
           </div>

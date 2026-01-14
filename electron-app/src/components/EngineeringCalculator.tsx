@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import Card from './Card'
 import UniversalCalculator from './UniversalCalculator'
 
@@ -6,7 +7,19 @@ interface EngineeringCalculatorProps {
   onInputUsed?: () => void
 }
 
+type CalculationMode = 'smart' | 'all' | 'single'
+
 export default function EngineeringCalculator({ initialInput, onInputUsed }: EngineeringCalculatorProps = {}) {
+  const [calculationMode, setCalculationMode] = useState<CalculationMode>('smart')
+  const [selectedSingleMode, setSelectedSingleMode] = useState<string>('evaluate')
+
+  // 모드에 따른 forceMode 결정
+  const getForceMode = () => {
+    if (calculationMode === 'all') return 'calculateAll' as const
+    if (calculationMode === 'single') return selectedSingleMode as any
+    return 'calculateAll' as const // smart 모드도 calculateAll 사용 (shouldRunMode가 필터링)
+  }
+
   return (
     <div className="space-y-4">
       {/* 공학 계산기 설명 */}
@@ -17,9 +30,81 @@ export default function EngineeringCalculator({ initialInput, onInputUsed }: Eng
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">공학용 계산기</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                mathjs + nerdamer 기반 범용 수식 파서 - 모든 수학 연산 지원
+                mathjs + nerdamer 기반 범용 수식 파서 - 스마트 연산 필터링 적용
               </p>
             </div>
+          </div>
+
+          {/* ✅ v1.0.29: 계산 모드 선택 UI */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
+            <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">🎯 계산 모드 선택</h3>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setCalculationMode('smart')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  calculationMode === 'smart'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                }`}
+              >
+                🧠 스마트 (추천)
+              </button>
+              <button
+                onClick={() => setCalculationMode('all')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  calculationMode === 'all'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                }`}
+              >
+                📊 전체 연산
+              </button>
+              <button
+                onClick={() => setCalculationMode('single')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  calculationMode === 'single'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                }`}
+              >
+                🎯 단일 모드
+              </button>
+            </div>
+
+            {/* 단일 모드 선택 시 세부 모드 선택 */}
+            {calculationMode === 'single' && (
+              <div className="mt-3 flex flex-wrap gap-1">
+                {[
+                  { id: 'evaluate', label: '🧮 계산', desc: '수식 평가' },
+                  { id: 'solve', label: '📐 풀이', desc: '방정식 풀기' },
+                  { id: 'differentiate', label: '∂ 미분', desc: '도함수' },
+                  { id: 'integrate', label: '∫ 적분', desc: '부정적분' },
+                  { id: 'simplify', label: '✨ 간단히', desc: '수식 간소화' },
+                  { id: 'factor', label: '🔢 인수분해', desc: '다항식 분해' },
+                  { id: 'expand', label: '📖 전개', desc: '수식 전개' },
+                ].map(mode => (
+                  <button
+                    key={mode.id}
+                    onClick={() => setSelectedSingleMode(mode.id)}
+                    className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                      selectedSingleMode === mode.id
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500'
+                    }`}
+                    title={mode.desc}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* 모드 설명 */}
+            <p className="mt-2 text-xs text-blue-700 dark:text-blue-400">
+              {calculationMode === 'smart' && '💡 입력 수식을 분석하여 적절한 연산만 자동 실행합니다.'}
+              {calculationMode === 'all' && '⚠️ 모든 연산을 시도합니다 (일부 에러 발생 가능).'}
+              {calculationMode === 'single' && `🎯 선택한 "${selectedSingleMode}" 연산만 실행합니다.`}
+            </p>
           </div>
 
           {/* 지원 기능 */}
@@ -69,11 +154,11 @@ export default function EngineeringCalculator({ initialInput, onInputUsed }: Eng
         </div>
       </Card>
 
-      {/* 범용 계산기 - ✅ Phase 2: 항상 통합 모드로 실행 */}
+      {/* 범용 계산기 - ✅ v1.0.29: 스마트 모드 필터링 적용 */}
       <UniversalCalculator
         initialInput={initialInput}
         onInputUsed={onInputUsed}
-        forceMode="calculateAll"
+        forceMode={getForceMode()}
       />
     </div>
   )
