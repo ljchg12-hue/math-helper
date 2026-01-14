@@ -1,125 +1,175 @@
-// 그래프 생성을 위한 유틸리티 함수들
+/**
+ * 그래프 생성을 위한 유틸리티 함수들
+ * ✅ v1.0.32: 참조 자료 기반 전면 개선
+ *
+ * function-plot 라이브러리는 math.js 표현식 파서를 사용합니다.
+ * @see https://mathjs.org/docs/expressions/syntax.html
+ */
+
+// 수학 함수 및 상수 목록 (변수에서 제외)
+const MATH_KEYWORDS = new Set([
+  // 삼각함수
+  'sin', 'cos', 'tan', 'cot', 'sec', 'csc',
+  'asin', 'acos', 'atan', 'atan2',
+  'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh',
+  // 로그/지수
+  'log', 'ln', 'log10', 'log2', 'exp',
+  // 제곱근
+  'sqrt', 'cbrt', 'nthRoot',
+  // 기타 함수
+  'abs', 'floor', 'ceil', 'round', 'sign',
+  'min', 'max', 'pow', 'mod',
+  'factorial', 'gamma',
+  // 상수
+  'pi', 'PI', 'e', 'E', 'i', 'I',
+  'NaN', 'Infinity', 'inf',
+  // 특수
+  'true', 'false', 'null'
+])
 
 /**
  * 수식에서 변수를 추출합니다
  */
 export function extractVariables(expression: string): string[] {
-  const matches = expression.match(/[a-zA-Z]+/g) || []
-  // 수학 함수 및 상수 제외
-  const mathFunctions = [
-    'sin', 'cos', 'tan', 'cot', 'sec', 'csc',
-    'asin', 'acos', 'atan', 'atan2',
-    'sinh', 'cosh', 'tanh',
-    'log', 'ln', 'log10', 'log2',
-    'exp', 'sqrt', 'cbrt',
-    'abs', 'floor', 'ceil', 'round',
-    'min', 'max', 'pow',
-    'pi', 'PI', 'e', 'E',  // 상수
-    'NaN', 'Infinity'
-  ]
-  return [...new Set(matches.filter(v => !mathFunctions.includes(v) && !mathFunctions.includes(v.toLowerCase())))]
+  if (!expression) return []
+
+  // 알파벳 단어 추출
+  const matches = expression.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || []
+
+  // 수학 키워드 제외
+  const variables = matches.filter(word =>
+    !MATH_KEYWORDS.has(word) && !MATH_KEYWORDS.has(word.toLowerCase())
+  )
+
+  // 중복 제거
+  return [...new Set(variables)]
 }
 
 /**
  * 수식이 그래프로 표현 가능한지 확인합니다
- *
- * @param expression - 확인할 수식
- * @param mode - 계산 모드
- * @returns 그래프 가능 여부
- *
- * @example
- * isGraphable("sin(x)", "evaluate") // → true (1변수)
- * isGraphable("x*y", "evaluate") // → true (2변수, 추후 3D 지원)
- * isGraphable("sin(3)", "evaluate") // → false (변수 없음)
- * isGraphable("x*y*z", "evaluate") // → false (3변수는 미지원)
  */
 export function isGraphable(expression: string, mode: string): boolean {
-  // 방정식은 solve 모드에서만
-  if (expression.includes('=') && mode !== 'solve') return false
+  if (!expression || !expression.trim()) return false
 
-  const variables = extractVariables(expression)
+  // 방정식은 solve 모드에서만 (단, 함수 정의 형식은 제외)
+  const isFunctionDef = /^[a-zA-Z]\s*=/.test(expression.trim()) &&
+    !/^[a-zA-Z]\s*=\s*[a-zA-Z]\s*$/.test(expression.trim())
 
-  // ✅ 수정: 1~2개 변수만 그래프 가능
-  // - 0개: 상수는 그래프 불가 (점 하나만 있음)
-  // - 1개: y = f(x) 2D 그래프 ✅
-  // - 2개: z = f(x,y) 3D 그래프 또는 등고선 (추후 구현) ✅
-  // - 3개+: 미지원 ❌
-  if (variables.length < 1 || variables.length > 2) {
+  if (expression.includes('=') && mode !== 'solve' && !isFunctionDef) {
     return false
   }
 
-  return true
+  const variables = extractVariables(expression)
+
+  // 1~2개 변수만 그래프 가능
+  // 0개: 상수 (그래프 불가)
+  // 1개: 2D 그래프
+  // 2개: 3D/등고선 (추후)
+  // 3개+: 미지원
+  return variables.length >= 1 && variables.length <= 2
 }
 
 /**
- * mathjs/nerdamer 표현식을 function-plot 형식으로 변환합니다
+ * 수식을 function-plot 형식으로 변환합니다
  *
- * function-plot은 math.js의 표현식 파서를 사용하므로:
- * - ^ 연산자 지원 (거듭제곱)
+ * function-plot은 math.js 문법을 사용:
+ * - ^ 또는 ** : 거듭제곱
  * - sin, cos, tan, log, sqrt, abs, exp 등 지원
- * - 암묵적 곱셈 (2x) 지원 안 함 → 2*x로 변환 필요
+ * - 암묵적 곱셈 미지원 (2x → 2*x 변환 필요)
+ *
+ * @see https://mauriciopoppe.github.io/function-plot/
  */
 export function convertToPlotFormat(expression: string, variable: string = 'x'): string {
-  let plotExpr = expression.trim()
+  let expr = expression.trim()
 
-  // 빈 문자열 체크
-  if (!plotExpr) return variable
+  // 빈 문자열
+  if (!expr) return variable
 
-  // ✅ v1.0.30: 함수 정의 형식 처리 (y=sin(x) → sin(x))
-  // y=, f(x)=, g(x)= 등의 좌변 제거
-  if (/^[a-zA-Z](\([a-zA-Z]\))?\s*=/.test(plotExpr)) {
-    plotExpr = plotExpr.replace(/^[a-zA-Z](\([a-zA-Z]\))?\s*=\s*/, '')
-  }
+  // 1. 함수 정의 형식 처리 (y=sin(x) → sin(x), f(x)=x^2 → x^2)
+  expr = expr.replace(/^[a-zA-Z](\s*\([a-zA-Z]\))?\s*=\s*/, '')
 
-  // ✅ FIX: 방정식 형식 처리 (x^2 - 4 = 0 → x^2 - 4)
-  if (plotExpr.includes('=')) {
-    const parts = plotExpr.split('=')
-    if (parts.length === 2) {
-      const left = parts[0].trim()
-      const right = parts[1].trim()
-      // 우변이 0이면 좌변만 사용
-      if (right === '0' || right === '') {
-        plotExpr = left
-      } else {
-        // 우변이 0이 아니면 좌변 - 우변
-        plotExpr = `(${left}) - (${right})`
-      }
+  // 2. 방정식 형식 처리 (x^2 - 4 = 0 → x^2 - 4)
+  if (expr.includes('=')) {
+    const [left, right] = expr.split('=').map(s => s.trim())
+    if (right === '0' || right === '') {
+      expr = left
+    } else {
+      expr = `(${left}) - (${right})`
     }
   }
 
-  // ✅ FIX: 암묵적 곱셈 변환 (2x → 2*x, 3sin(x) → 3*sin(x))
-  // 숫자 + 변수
-  plotExpr = plotExpr.replace(/(\d)([a-zA-Z])/g, '$1*$2')
-  // 닫는 괄호 + 변수/숫자/여는 괄호
-  plotExpr = plotExpr.replace(/\)([a-zA-Z0-9(])/g, ')*$1')
-  // 변수 + 여는 괄호 (함수 호출 제외)
-  plotExpr = plotExpr.replace(/([a-zA-Z])(\()(?!sin|cos|tan|log|ln|exp|sqrt|abs)/gi, '$1*$2')
+  // 3. 암묵적 곱셈 변환
+  // 3a. 숫자 + 변수/함수: 2x → 2*x, 3sin → 3*sin
+  expr = expr.replace(/(\d)([a-zA-Z])/g, '$1*$2')
 
-  // ln → log로 변환 (function-plot은 ln 미지원)
-  plotExpr = plotExpr.replace(/\bln\b/gi, 'log')
+  // 3b. 닫는 괄호 + 문자/숫자/여는 괄호: )x → )*x, )2 → )*2, )( → )*(
+  expr = expr.replace(/\)([a-zA-Z0-9(])/g, ')*$1')
 
-  // ✅ FIX: π → pi 변환 (function-plot 호환)
-  plotExpr = plotExpr.replace(/π/g, 'pi')
-  plotExpr = plotExpr.replace(/PI/g, 'pi')
+  // 3c. 변수 + 여는 괄호 (함수 호출 제외): x( → x*(
+  // 함수 목록 제외
+  const funcPattern = /([a-zA-Z_][a-zA-Z0-9_]*)\(/g
+  const funcNames = [...MATH_KEYWORDS]
+  let result = ''
+  let lastIndex = 0
+  let match
 
-  // ✅ FIX: e 상수 처리 (단독 e는 E로, 변수 e와 구분)
-  // 단, exp 함수와 혼동 방지
-  plotExpr = plotExpr.replace(/\be\b(?!xp)/gi, 'E')
+  while ((match = funcPattern.exec(expr)) !== null) {
+    const funcName = match[1].toLowerCase()
+    result += expr.slice(lastIndex, match.index)
 
-  return plotExpr
+    if (funcNames.includes(funcName) || MATH_KEYWORDS.has(funcName)) {
+      // 함수 호출 유지
+      result += match[0]
+    } else {
+      // 변수 * 괄호
+      result += match[1] + '*('
+    }
+    lastIndex = match.index + match[0].length
+  }
+  expr = result + expr.slice(lastIndex)
+
+  // 4. 특수 문자 변환
+  // π → pi
+  expr = expr.replace(/π/g, 'pi')
+  // ln → log (function-plot/math.js는 log가 자연로그)
+  expr = expr.replace(/\bln\b/gi, 'log')
+  // 단독 e 상수 (exp 함수와 구분)
+  expr = expr.replace(/\be\b(?![a-zA-Z])/g, 'E')
+
+  // 5. 공백 정리
+  expr = expr.replace(/\s+/g, '')
+
+  return expr || variable
 }
 
 /**
- * 그래프의 적절한 범위를 자동으로 계산합니다
+ * X축 범위 자동 계산
  */
 export function calculateDomain(expression: string): [number, number] {
-  // 삼각함수가 있으면 [-2π, 2π]
-  if (/sin|cos|tan/.test(expression)) {
+  const expr = expression.toLowerCase()
+
+  // 삼각함수: [-2π, 2π]
+  if (/\b(sin|cos|tan|cot|sec|csc)\b/.test(expr)) {
     return [-2 * Math.PI, 2 * Math.PI]
   }
 
-  // 지수/로그 함수가 있으면 [-5, 5]
-  if (/exp|log|ln/.test(expression)) {
+  // 로그 함수: [0.1, 10] (양수만)
+  if (/\b(log|ln)\b/.test(expr)) {
+    return [0.1, 20]
+  }
+
+  // 지수 함수: [-5, 5]
+  if (/\bexp\b/.test(expr)) {
+    return [-5, 5]
+  }
+
+  // 제곱근: [0, 20] (음수 제외)
+  if (/\bsqrt\b/.test(expr)) {
+    return [0, 20]
+  }
+
+  // 고차 다항식 (^3, ^4 등): 더 넓은 범위
+  if (/\^[3-9]|\^\d{2,}/.test(expr)) {
     return [-5, 5]
   }
 
@@ -128,17 +178,34 @@ export function calculateDomain(expression: string): [number, number] {
 }
 
 /**
- * 그래프의 y 범위를 자동으로 계산합니다
+ * Y축 범위 자동 계산
  */
 export function calculateRange(expression: string): [number, number] {
-  // 지수 함수가 있으면 더 큰 범위
-  if (/exp/.test(expression)) {
-    return [-10, 50]
+  const expr = expression.toLowerCase()
+
+  // 지수 함수: [0, 50]
+  if (/\bexp\b/.test(expr)) {
+    return [-5, 50]
   }
 
-  // 로그 함수가 있으면 음수 포함
-  if (/log|ln/.test(expression)) {
-    return [-5, 5]
+  // 삼각함수: [-2, 2]
+  if (/\b(sin|cos)\b/.test(expr)) {
+    return [-2, 2]
+  }
+
+  // tan: [-10, 10] (점근선 고려)
+  if (/\btan\b/.test(expr)) {
+    return [-10, 10]
+  }
+
+  // 로그: [-5, 10]
+  if (/\b(log|ln)\b/.test(expr)) {
+    return [-5, 10]
+  }
+
+  // 고차 다항식
+  if (/\^[3-9]|\^\d{2,}/.test(expr)) {
+    return [-100, 100]
   }
 
   // 기본값
@@ -146,17 +213,22 @@ export function calculateRange(expression: string): [number, number] {
 }
 
 /**
- * 수식에서 그래프 제목을 생성합니다
+ * 그래프 제목 생성
  */
 export function generateGraphTitle(expression: string, mode: string, variable: string = 'x'): string {
+  // 긴 수식은 축약
+  const shortExpr = expression.length > 30
+    ? expression.substring(0, 27) + '...'
+    : expression
+
   switch (mode) {
     case 'differentiate':
-      return `f'(${variable}) = ${expression}`
+      return `f'(${variable})`
     case 'integrate':
-      return `∫ f(${variable}) d${variable}`
+      return `∫f(${variable})d${variable}`
     case 'solve':
-      return `y = ${expression.replace('=', '- (')}) (근 찾기)`
+      return `근 탐색: ${shortExpr}`
     default:
-      return `f(${variable}) = ${expression}`
+      return `f(${variable}) = ${shortExpr}`
   }
 }

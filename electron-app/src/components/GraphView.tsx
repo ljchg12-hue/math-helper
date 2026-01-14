@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useId } from 'react'
 import functionPlot from 'function-plot'
-import type { FunctionPlotOptions } from '../types/function-plot'
 import Card from './Card'
 import {
   convertToPlotFormat,
@@ -19,6 +18,37 @@ interface GraphViewProps {
   show?: boolean
 }
 
+// ✅ v1.0.32: function-plot 옵션 타입 (공식 문서 기반)
+interface FunctionPlotOptions {
+  target: string | HTMLElement
+  title?: string
+  width?: number
+  height?: number
+  xAxis?: {
+    label?: string
+    domain?: [number, number]
+  }
+  yAxis?: {
+    label?: string
+    domain?: [number, number]
+  }
+  grid?: boolean
+  disableZoom?: boolean
+  data: Array<{
+    fn: string
+    sampler?: 'interval' | 'builtIn'
+    graphType?: 'polyline' | 'scatter' | 'interval'
+    nSamples?: number
+    color?: string
+    range?: [number, number]
+  }>
+  annotations?: Array<{
+    x?: number
+    y?: number
+    text: string
+  }>
+}
+
 export default function GraphView({
   expression,
   mode,
@@ -28,49 +58,61 @@ export default function GraphView({
 }: GraphViewProps) {
   const graphRef = useRef<HTMLDivElement>(null)
   const [error, setError] = useState<string | null>(null)
-  const [isRendered, setIsRendered] = useState(false)
+  const [debugInfo, setDebugInfo] = useState<string>('')
 
-  // ✅ FIX: 그래프 렌더링 함수 분리
+  // ✅ 고유 ID 생성 (React 18+)
+  const uniqueId = useId()
+  const containerId = `graph-container-${uniqueId.replace(/:/g, '')}`
+
+  // ✅ v1.0.32: 그래프 렌더링 함수 (참조 자료 기반 재작성)
   const renderGraph = useCallback(() => {
-    if (!graphRef.current) return
-
-    // ✅ FIX: 이전 그래프 정리 (SVG 누적 방지)
-    graphRef.current.innerHTML = ''
-
-    // 변수 개수 확인
-    const variables = extractVariables(expression)
-
-    // 변수가 없는 경우: 조용히 숨김 (상수는 그래프 불필요)
-    if (variables.length === 0) {
-      setError(null)
-      setIsRendered(false)
+    const container = graphRef.current
+    if (!container) {
+      console.warn('[GraphView] Container ref is null')
       return
     }
 
-    // 그래프 가능 여부 확인 (1~2개 변수만)
+    // 이전 그래프 제거
+    container.innerHTML = ''
+
+    // 변수 추출
+    const variables = extractVariables(expression)
+    if (variables.length === 0) {
+      setError(null)
+      setDebugInfo('변수가 없는 상수 수식')
+      return
+    }
+
+    // 그래프 가능 여부 확인
     if (!isGraphable(expression, mode)) {
       setError('이 수식은 그래프로 표현할 수 없습니다')
-      setIsRendered(false)
       return
     }
 
     try {
       setError(null)
 
-      // function-plot 형식으로 변환
+      // ✅ 수식 변환 (function-plot 형식)
       const plotExpr = convertToPlotFormat(expression, variable)
+      console.log('[GraphView] Original:', expression)
+      console.log('[GraphView] Converted:', plotExpr)
+      setDebugInfo(`수식: ${plotExpr}`)
+
+      // ✅ 범위 계산
       const domain = calculateDomain(expression)
       const range = calculateRange(expression)
 
-      // ✅ FIX: 컨테이너 너비 계산 (최소 300px 보장)
-      const containerWidth = Math.max(graphRef.current.clientWidth || 300, 300)
+      // ✅ 컨테이너 크기 (최소값 보장)
+      const width = Math.max(container.clientWidth || 400, 300)
+      const height = 400
 
-      // 그래프 옵션 설정
+      // ✅ function-plot 옵션 (공식 문서 기반)
       const options: FunctionPlotOptions = {
-        target: graphRef.current,
-        width: containerWidth,
-        height: 400,
+        target: container,  // HTMLElement 직접 전달
+        width,
+        height,
         grid: true,
+        disableZoom: false,
         xAxis: {
           label: variable,
           domain: domain
@@ -82,69 +124,79 @@ export default function GraphView({
         data: [
           {
             fn: plotExpr,
-            color: '#2563eb',
+            sampler: 'builtIn',  // ✅ 기본 샘플러 사용 (더 안정적)
             graphType: 'polyline',
-            nSamples: 1000
+            nSamples: 500,
+            color: '#2563eb'
           }
-        ],
-        disableZoom: false
+        ]
       }
 
-      // solve 모드인 경우 해를 점으로 표시
+      // ✅ solve 모드: 해를 점으로 표시
       if (mode === 'solve' && result?.solutions && result.solutions.length > 0) {
-        options.annotations = result.solutions.map((sol: number) => ({
-          x: sol,
-          y: 0,
-          text: `x = ${sol}`
-        }))
+        options.annotations = result.solutions
+          .filter((sol: any) => !isNaN(Number(sol)))
+          .map((sol: any) => ({
+            x: Number(sol),
+            y: 0,
+            text: `x=${Number(sol).toFixed(2)}`
+          }))
       }
 
-      // ✅ FIX: 그래프 그리기
+      // ✅ 그래프 렌더링
+      console.log('[GraphView] Rendering with options:', options)
       functionPlot(options)
-      setIsRendered(true)
+      console.log('[GraphView] Render success')
+
     } catch (err) {
-      console.error('그래프 생성 오류:', err)
-      setError(`그래프를 생성할 수 없습니다: ${(err as Error).message}`)
-      setIsRendered(false)
+      const errorMsg = err instanceof Error ? err.message : String(err)
+      console.error('[GraphView] Render error:', errorMsg)
+      setError(`그래프 오류: ${errorMsg}`)
+      setDebugInfo(`에러: ${errorMsg}`)
     }
   }, [expression, mode, variable, result])
 
-  // ✅ FIX: show 변경 및 expression 변경 시 렌더링
+  // ✅ 표시 상태 및 수식 변경 시 렌더링
   useEffect(() => {
-    if (!show) {
-      setIsRendered(false)
-      return
-    }
+    if (!show || !expression.trim()) return
 
-    // ✅ FIX: 약간의 지연 후 렌더링 (DOM 마운트 보장)
+    // DOM이 준비될 때까지 대기
     const timer = setTimeout(() => {
       renderGraph()
-    }, 100)
+    }, 150)
 
     return () => clearTimeout(timer)
-  }, [show, renderGraph])
+  }, [show, expression, mode, variable, result, renderGraph])
 
-  // ✅ FIX: 윈도우 리사이즈 시 다시 그리기
+  // ✅ 윈도우 리사이즈 대응
   useEffect(() => {
     if (!show) return
 
+    let resizeTimer: NodeJS.Timeout
     const handleResize = () => {
-      renderGraph()
+      clearTimeout(resizeTimer)
+      resizeTimer = setTimeout(() => {
+        renderGraph()
+      }, 250)
     }
 
     window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      clearTimeout(resizeTimer)
+    }
   }, [show, renderGraph])
 
+  // ✅ 표시 조건
   if (!show) return null
 
-  // 변수가 없으면 그래프 컴포넌트 자체를 숨김
   const variables = extractVariables(expression)
   if (variables.length === 0) return null
 
   return (
     <Card>
       <div className="space-y-3">
+        {/* 헤더 */}
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
             📊 그래프
@@ -154,27 +206,40 @@ export default function GraphView({
           </span>
         </div>
 
-        {/* ✅ FIX: 에러가 있어도 컨테이너는 항상 렌더링 */}
+        {/* ✅ 그래프 컨테이너 (항상 렌더링) */}
         <div
+          id={containerId}
           ref={graphRef}
           className="w-full bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden"
-          style={{ minHeight: '400px', minWidth: '300px' }}
+          style={{
+            minHeight: '400px',
+            minWidth: '300px',
+            position: 'relative'
+          }}
         />
 
-        {/* 에러 메시지 오버레이 */}
+        {/* 에러 메시지 */}
         {error && (
-          <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
-            <p className="text-sm text-orange-700 dark:text-orange-400">
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-700 dark:text-red-400">
               ⚠️ {error}
             </p>
           </div>
         )}
 
+        {/* 디버그 정보 (개발 모드) */}
+        {process.env.NODE_ENV === 'development' && debugInfo && (
+          <div className="text-xs text-gray-400 font-mono">
+            {debugInfo}
+          </div>
+        )}
+
+        {/* 안내 */}
         <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-          <p>💡 그래프를 드래그하여 이동하거나 스크롤하여 확대/축소할 수 있습니다</p>
-          <p>📌 파란색 선: 함수 그래프</p>
-          {mode === 'solve' && result?.solutions && result.solutions.length > 0 && (
-            <p>🎯 빨간색 점: 방정식의 해</p>
+          <p>💡 마우스 드래그: 이동 / 스크롤: 확대·축소</p>
+          <p>📌 파란선: f({variable}) 그래프</p>
+          {mode === 'solve' && result?.solutions?.length > 0 && (
+            <p>🎯 점: 방정식의 해</p>
           )}
         </div>
       </div>
