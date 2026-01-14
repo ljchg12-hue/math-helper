@@ -36,3 +36,73 @@ body {
 .animate-slideIn {
   animation: slideIn 0.3s ease-out forwards;
 }
+
+/* ✅ function-plot 그래프 스타일 */
+.function-plot {
+  width: 100% !important;
+}
+
+.function-plot svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.function-plot .x.axis,
+.function-plot .y.axis {
+  stroke: #374151;
+  stroke-width: 1;
+}
+
+.function-plot .x.axis text,
+.function-plot .y.axis text {
+  fill: #374151;
+  font-size: 12px;
+}
+
+.function-plot .graph {
+  stroke-width: 2;
+}
+
+.function-plot .line {
+  fill: none;
+  stroke-width: 2;
+}
+
+/* 그리드 라인 스타일 */
+.function-plot .grid line {
+  stroke: #e5e7eb;
+  stroke-opacity: 0.7;
+}
+
+/* 다크 모드 지원 */
+.dark .function-plot .x.axis,
+.dark .function-plot .y.axis {
+  stroke: #9ca3af;
+}
+
+.dark .function-plot .x.axis text,
+.dark .function-plot .y.axis text {
+  fill: #9ca3af;
+}
+
+.dark .function-plot .grid line {
+  stroke: #4b5563;
+  stroke-opacity: 0.5;
+}
+
+/* 축 레이블 스타일 */
+.function-plot .x.axis .label,
+.function-plot .y.axis .label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 툴팁 스타일 */
+.function-plot .tip {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}

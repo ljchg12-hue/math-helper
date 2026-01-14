@@ -5,9 +5,19 @@
  */
 export function extractVariables(expression: string): string[] {
   const matches = expression.match(/[a-zA-Z]+/g) || []
-  // 수학 함수 제외
-  const mathFunctions = ['sin', 'cos', 'tan', 'log', 'ln', 'exp', 'sqrt', 'abs', 'floor', 'ceil']
-  return [...new Set(matches.filter(v => !mathFunctions.includes(v)))]
+  // 수학 함수 및 상수 제외
+  const mathFunctions = [
+    'sin', 'cos', 'tan', 'cot', 'sec', 'csc',
+    'asin', 'acos', 'atan', 'atan2',
+    'sinh', 'cosh', 'tanh',
+    'log', 'ln', 'log10', 'log2',
+    'exp', 'sqrt', 'cbrt',
+    'abs', 'floor', 'ceil', 'round',
+    'min', 'max', 'pow',
+    'pi', 'PI', 'e', 'E',  // 상수
+    'NaN', 'Infinity'
+  ]
+  return [...new Set(matches.filter(v => !mathFunctions.includes(v) && !mathFunctions.includes(v.toLowerCase())))]
 }
 
 /**
@@ -43,9 +53,17 @@ export function isGraphable(expression: string, mode: string): boolean {
 
 /**
  * mathjs/nerdamer 표현식을 function-plot 형식으로 변환합니다
+ *
+ * function-plot은 math.js의 표현식 파서를 사용하므로:
+ * - ^ 연산자 지원 (거듭제곱)
+ * - sin, cos, tan, log, sqrt, abs, exp 등 지원
+ * - 암묵적 곱셈 (2x) 지원 안 함 → 2*x로 변환 필요
  */
 export function convertToPlotFormat(expression: string, variable: string = 'x'): string {
   let plotExpr = expression.trim()
+
+  // 빈 문자열 체크
+  if (!plotExpr) return variable
 
   // ✅ v1.0.30: 함수 정의 형식 처리 (y=sin(x) → sin(x))
   // y=, f(x)=, g(x)= 등의 좌변 제거
@@ -53,13 +71,40 @@ export function convertToPlotFormat(expression: string, variable: string = 'x'):
     plotExpr = plotExpr.replace(/^[a-zA-Z](\([a-zA-Z]\))?\s*=\s*/, '')
   }
 
-  // 거듭제곱 변환: x^2 → x^2 (function-plot은 ^ 지원)
-  // 곱셈 기호 추가: 2x → 2*x
-  plotExpr = plotExpr.replace(/(\d)([a-zA-Z])/g, '$1*$2')
+  // ✅ FIX: 방정식 형식 처리 (x^2 - 4 = 0 → x^2 - 4)
+  if (plotExpr.includes('=')) {
+    const parts = plotExpr.split('=')
+    if (parts.length === 2) {
+      const left = parts[0].trim()
+      const right = parts[1].trim()
+      // 우변이 0이면 좌변만 사용
+      if (right === '0' || right === '') {
+        plotExpr = left
+      } else {
+        // 우변이 0이 아니면 좌변 - 우변
+        plotExpr = `(${left}) - (${right})`
+      }
+    }
+  }
 
-  // sin, cos 등은 그대로 사용
-  // ln → log로 변환
-  plotExpr = plotExpr.replace(/\bln\b/g, 'log')
+  // ✅ FIX: 암묵적 곱셈 변환 (2x → 2*x, 3sin(x) → 3*sin(x))
+  // 숫자 + 변수
+  plotExpr = plotExpr.replace(/(\d)([a-zA-Z])/g, '$1*$2')
+  // 닫는 괄호 + 변수/숫자/여는 괄호
+  plotExpr = plotExpr.replace(/\)([a-zA-Z0-9(])/g, ')*$1')
+  // 변수 + 여는 괄호 (함수 호출 제외)
+  plotExpr = plotExpr.replace(/([a-zA-Z])(\()(?!sin|cos|tan|log|ln|exp|sqrt|abs)/gi, '$1*$2')
+
+  // ln → log로 변환 (function-plot은 ln 미지원)
+  plotExpr = plotExpr.replace(/\bln\b/gi, 'log')
+
+  // ✅ FIX: π → pi 변환 (function-plot 호환)
+  plotExpr = plotExpr.replace(/π/g, 'pi')
+  plotExpr = plotExpr.replace(/PI/g, 'pi')
+
+  // ✅ FIX: e 상수 처리 (단독 e는 E로, 변수 e와 구분)
+  // 단, exp 함수와 혼동 방지
+  plotExpr = plotExpr.replace(/\be\b(?!xp)/gi, 'E')
 
   return plotExpr
 }

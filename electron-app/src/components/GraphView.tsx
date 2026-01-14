@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import functionPlot from 'function-plot'
 import type { FunctionPlotOptions } from '../types/function-plot'
 import Card from './Card'
@@ -28,22 +28,29 @@ export default function GraphView({
 }: GraphViewProps) {
   const graphRef = useRef<HTMLDivElement>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isRendered, setIsRendered] = useState(false)
 
-  useEffect(() => {
-    if (!show || !graphRef.current) return
+  // ✅ FIX: 그래프 렌더링 함수 분리
+  const renderGraph = useCallback(() => {
+    if (!graphRef.current) return
+
+    // ✅ FIX: 이전 그래프 정리 (SVG 누적 방지)
+    graphRef.current.innerHTML = ''
 
     // 변수 개수 확인
     const variables = extractVariables(expression)
 
-    // ✅ 변수가 없는 경우: 조용히 숨김 (상수는 그래프 불필요)
+    // 변수가 없는 경우: 조용히 숨김 (상수는 그래프 불필요)
     if (variables.length === 0) {
-      setError(null)  // 에러 메시지 표시 안 함
+      setError(null)
+      setIsRendered(false)
       return
     }
 
     // 그래프 가능 여부 확인 (1~2개 변수만)
     if (!isGraphable(expression, mode)) {
       setError('이 수식은 그래프로 표현할 수 없습니다')
+      setIsRendered(false)
       return
     }
 
@@ -55,10 +62,13 @@ export default function GraphView({
       const domain = calculateDomain(expression)
       const range = calculateRange(expression)
 
+      // ✅ FIX: 컨테이너 너비 계산 (최소 300px 보장)
+      const containerWidth = Math.max(graphRef.current.clientWidth || 300, 300)
+
       // 그래프 옵션 설정
       const options: FunctionPlotOptions = {
         target: graphRef.current,
-        width: graphRef.current.clientWidth,
+        width: containerWidth,
         height: 400,
         grid: true,
         xAxis: {
@@ -74,10 +84,10 @@ export default function GraphView({
             fn: plotExpr,
             color: '#2563eb',
             graphType: 'polyline',
-            nSamples: 1000  // ✅ 더 부드러운 곡선 (기본 200 → 1000)
+            nSamples: 1000
           }
         ],
-        disableZoom: false  // ✅ 확대/축소 활성화
+        disableZoom: false
       }
 
       // solve 모드인 경우 해를 점으로 표시
@@ -89,15 +99,48 @@ export default function GraphView({
         }))
       }
 
-      // 그래프 그리기
+      // ✅ FIX: 그래프 그리기
       functionPlot(options)
+      setIsRendered(true)
     } catch (err) {
-      console.warn('그래프 생성 오류:', err)
-      setError('그래프를 생성할 수 없습니다')
+      console.error('그래프 생성 오류:', err)
+      setError(`그래프를 생성할 수 없습니다: ${(err as Error).message}`)
+      setIsRendered(false)
     }
-  }, [expression, mode, variable, result, show])
+  }, [expression, mode, variable, result])
+
+  // ✅ FIX: show 변경 및 expression 변경 시 렌더링
+  useEffect(() => {
+    if (!show) {
+      setIsRendered(false)
+      return
+    }
+
+    // ✅ FIX: 약간의 지연 후 렌더링 (DOM 마운트 보장)
+    const timer = setTimeout(() => {
+      renderGraph()
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [show, renderGraph])
+
+  // ✅ FIX: 윈도우 리사이즈 시 다시 그리기
+  useEffect(() => {
+    if (!show) return
+
+    const handleResize = () => {
+      renderGraph()
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [show, renderGraph])
 
   if (!show) return null
+
+  // 변수가 없으면 그래프 컴포넌트 자체를 숨김
+  const variables = extractVariables(expression)
+  if (variables.length === 0) return null
 
   return (
     <Card>
@@ -111,17 +154,20 @@ export default function GraphView({
           </span>
         </div>
 
-        {error ? (
+        {/* ✅ FIX: 에러가 있어도 컨테이너는 항상 렌더링 */}
+        <div
+          ref={graphRef}
+          className="w-full bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden"
+          style={{ minHeight: '400px', minWidth: '300px' }}
+        />
+
+        {/* 에러 메시지 오버레이 */}
+        {error && (
           <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
             <p className="text-sm text-orange-700 dark:text-orange-400">
               ⚠️ {error}
             </p>
           </div>
-        ) : (
-          <div
-            ref={graphRef}
-            className="w-full bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 p-4"
-          />
         )}
 
         <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
