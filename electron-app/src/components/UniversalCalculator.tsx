@@ -75,6 +75,8 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
   const [variableAnalysis, setVariableAnalysis] = useState<VariableAnalysis | null>(null)
   // ✅ v1.0.25: 입력 검증 경고
   const [inputWarning, setInputWarning] = useState<string>('')
+  // ✅ v1.0.33: Rad/Deg 모드 (각도 단위)
+  const [angleUnit, setAngleUnit] = useState<'rad' | 'deg'>('rad')
 
   // ✅ 전체 모드 정의
   const allModes: Mode[] = [
@@ -439,7 +441,8 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
         const executeModesIds = getCalculateAllModes(currentCategory)
 
         const allExecutors = [
-          { mode: 'evaluate' as CalculatorMode, executor: () => window.mathAPI.evaluate(input) },
+          // ✅ v1.0.33: 각도 단위 전달
+          { mode: 'evaluate' as CalculatorMode, executor: () => window.mathAPI.evaluate(input, angleUnit) },
           { mode: 'solve' as CalculatorMode, executor: () => window.mathAPI.solve(input, variable, parameterValues) },
           { mode: 'differentiate' as CalculatorMode, executor: () => window.mathAPI.differentiate(input, variable) },
           { mode: 'integrate' as CalculatorMode, executor: () => window.mathAPI.integrate(input, variable) },
@@ -509,7 +512,8 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
         // 기존 단일 모드 계산
         switch (mode) {
           case 'evaluate':
-            res = window.mathAPI.evaluate(input)
+            // ✅ v1.0.33: 각도 단위 전달
+            res = window.mathAPI.evaluate(input, angleUnit)
             break
           case 'solve':
             res = window.mathAPI.solve(input, variable, parameterValues)
@@ -892,13 +896,44 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
           )}
         </div>
 
-        {/* 가상 키보드 */}
+        {/* ✅ v1.0.33: Rad/Deg 토글 및 가상 키보드 */}
         {showKeyboard && (
-          <MathKeyboard
-            onInput={handleKeyboardInput}
-            onClear={handleClear}
-            onBackspace={handleBackspace}
-          />
+          <div className="space-y-2">
+            {/* Rad/Deg 토글 */}
+            <div className="flex items-center justify-between px-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                📐 각도 단위:
+              </span>
+              <div className="flex rounded-lg overflow-hidden border-2 border-gray-300 dark:border-gray-600">
+                <button
+                  onClick={() => setAngleUnit('rad')}
+                  className={`px-4 py-1.5 text-sm font-semibold transition-colors ${
+                    angleUnit === 'rad'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  RAD
+                </button>
+                <button
+                  onClick={() => setAngleUnit('deg')}
+                  className={`px-4 py-1.5 text-sm font-semibold transition-colors ${
+                    angleUnit === 'deg'
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  DEG
+                </button>
+              </div>
+            </div>
+            <MathKeyboard
+              onInput={handleKeyboardInput}
+              onClear={handleClear}
+              onBackspace={handleBackspace}
+              angleUnit={angleUnit}
+            />
+          </div>
         )}
 
         {/* 계산 버튼 */}

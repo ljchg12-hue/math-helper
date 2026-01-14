@@ -14,9 +14,14 @@ interface MathAPIResult {
   operation?: string
 }
 
+// ✅ v1.0.33: 각도 단위 타입
+type AngleUnit = 'rad' | 'deg'
+
 interface MathAPI {
-  evaluate: (expr: string) => MathAPIResult
-  solve: (equation: string, variable: string) => MathAPIResult
+  // ✅ v1.0.33: angleUnit 파라미터 추가
+  evaluate: (expr: string, angleUnit?: AngleUnit) => MathAPIResult
+  // ✅ Phase 3: parameterValues 파라미터 추가
+  solve: (equation: string, variable: string, parameterValues?: Record<string, string>) => MathAPIResult
   differentiate: (expr: string, variable: string, order?: number) => MathAPIResult
   integrate: (expr: string, variable: string, definite?: boolean, lower?: string, upper?: string) => MathAPIResult
   simplify: (expr: string) => MathAPIResult

@@ -80,13 +80,44 @@ function validateInput(expr, maxLength = 1000) {
 }
 
 // ============================================
-// 1. 범용 계산 (MathJS)
+// 1. 범용 계산 (MathJS) - v1.0.33: Rad/Deg 각도 단위 지원
 // ============================================
 /**
- * @param {string} expr - 계산할 수식
- * @returns {{success: boolean, result?: string, error?: string, original?: string, steps?: string[]}}
+ * DEG 모드용 삼각함수 스코프 (각도 → 라디안 변환)
  */
-function evaluateExpression(expr) {
+function createDegreeScope() {
+  const toRad = (deg) => deg * Math.PI / 180
+  const toDeg = (rad) => rad * 180 / Math.PI
+
+  return {
+    // 기본 삼각함수 (DEG 입력)
+    sin: (x) => Math.sin(toRad(x)),
+    cos: (x) => Math.cos(toRad(x)),
+    tan: (x) => Math.tan(toRad(x)),
+    cot: (x) => 1 / Math.tan(toRad(x)),
+    sec: (x) => 1 / Math.cos(toRad(x)),
+    csc: (x) => 1 / Math.sin(toRad(x)),
+    // 역삼각함수 (결과를 DEG로 변환)
+    asin: (x) => toDeg(Math.asin(x)),
+    acos: (x) => toDeg(Math.acos(x)),
+    atan: (x) => toDeg(Math.atan(x)),
+    atan2: (y, x) => toDeg(Math.atan2(y, x)),
+    // 쌍곡선함수 (각도 단위 무관)
+    sinh: Math.sinh,
+    cosh: Math.cosh,
+    tanh: Math.tanh,
+    asinh: Math.asinh,
+    acosh: Math.acosh,
+    atanh: Math.atanh
+  }
+}
+
+/**
+ * @param {string} expr - 계산할 수식
+ * @param {string} angleUnit - 각도 단위 ('rad' | 'deg', 기본값: 'rad')
+ * @returns {{success: boolean, result?: string, error?: string, original?: string, steps?: string[], angleUnit?: string}}
+ */
+function evaluateExpression(expr, angleUnit = 'rad') {
   try {
     // ✅ HIGH #3: 입력 검증
     expr = validateInput(expr)
@@ -122,7 +153,9 @@ function evaluateExpression(expr) {
       }
     }
 
-    const result = math.evaluate(expr)
+    // ✅ v1.0.33: DEG 모드일 때 각도 스코프 적용
+    const scope = angleUnit === 'deg' ? createDegreeScope() : {}
+    const result = math.evaluate(expr, scope)
 
     // Check for NaN or Infinity
     if (typeof result === 'number' && (!isFinite(result) || isNaN(result))) {
@@ -161,8 +194,10 @@ function evaluateExpression(expr) {
       success: true,
       result: resultStr,
       original: expr,
+      angleUnit,
       steps: [
         `입력: ${expr}`,
+        angleUnit === 'deg' ? '각도 단위: DEG (도)' : '각도 단위: RAD (라디안)',
         `결과: ${resultStr}`
       ]
     }
