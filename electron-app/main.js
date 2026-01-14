@@ -15,8 +15,8 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      // ✅ FIX v1.0.23: sandbox: false - nerdamer require 허용 (contextIsolation으로 보안 유지)
-      sandbox: false,
+      // ✅ FIX v1.0.28: sandbox: true - 보안 강화 (preload는 esbuild 번들로 동작)
+      sandbox: true,
       enableRemoteModule: false,
       nodeIntegrationInWorker: false,
       nodeIntegrationInSubFrames: false,
