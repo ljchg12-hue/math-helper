@@ -45,7 +45,13 @@ export function isGraphable(expression: string, mode: string): boolean {
  * mathjs/nerdamer 표현식을 function-plot 형식으로 변환합니다
  */
 export function convertToPlotFormat(expression: string, variable: string = 'x'): string {
-  let plotExpr = expression
+  let plotExpr = expression.trim()
+
+  // ✅ v1.0.30: 함수 정의 형식 처리 (y=sin(x) → sin(x))
+  // y=, f(x)=, g(x)= 등의 좌변 제거
+  if (/^[a-zA-Z](\([a-zA-Z]\))?\s*=/.test(plotExpr)) {
+    plotExpr = plotExpr.replace(/^[a-zA-Z](\([a-zA-Z]\))?\s*=\s*/, '')
+  }
 
   // 거듭제곱 변환: x^2 → x^2 (function-plot은 ^ 지원)
   // 곱셈 기호 추가: 2x → 2*x

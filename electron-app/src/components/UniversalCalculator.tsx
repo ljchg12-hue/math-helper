@@ -351,13 +351,19 @@ export default function UniversalCalculator({ initialInput, onInputUsed, forceMo
     const hasIntegralKeywords = /∫|적분|integral/i.test(inputExpr)
     const hasLimitKeywords = /lim|극한|limit|→/i.test(inputExpr)
 
+    // ✅ v1.0.30: 함수 정의 패턴 감지 (y=sin(x), f(x)=x^2 등)
+    // 좌변이 단일 변수이고 우변에 다른 변수가 있으면 함수 정의
+    const isFunctionDefinition = hasEquals && /^[a-zA-Z]\s*=\s*/.test(inputExpr.trim())
+
     switch (targetMode) {
       case 'evaluate':
-        // 등호가 있으면 evaluate는 의미 없음
-        return !hasEquals
+        // 함수 정의는 evaluate로 처리 (그래프용)
+        // 일반 등호 방정식은 evaluate 스킵
+        return !hasEquals || isFunctionDefinition
       case 'solve':
-        // 등호가 있거나 변수가 있어야 방정식 풀이 가능
-        return hasEquals || hasVariable
+        // 함수 정의는 solve하면 안됨 (y=sin(x)는 방정식이 아님)
+        // 일반 방정식만 solve
+        return hasEquals && !isFunctionDefinition
       case 'differentiate':
         // 변수가 있어야 미분 가능, 순수 숫자는 제외
         return hasVariable && !isNumericOnly
