@@ -390,30 +390,60 @@ export function limit(
     if (isNaN(approachNum)) {
       // 무한대로 접근
       if (approach === 'infinity' || approach === 'inf') {
-        const largeValue = 1e9
+        const largeValue = 1e12  // ✅ FIX v1.0.31: 더 큰 값으로 정밀도 향상
         result = nerdamer(expr).evaluate({ [variable]: largeValue }).text()
       } else if (approach === '-infinity' || approach === '-inf') {
-        const largeNegativeValue = -1e9
+        const largeNegativeValue = -1e12
         result = nerdamer(expr).evaluate({ [variable]: largeNegativeValue }).text()
       } else {
         throw new Error('접근값이 올바르지 않습니다')
       }
     } else {
-      const epsilon = 1e-6
+      // ✅ FIX v1.0.31: 다중 epsilon으로 수렴성 검사 (Richardson Extrapolation)
+      const epsilons = [1e-4, 1e-6, 1e-8, 1e-10]
+
+      const evaluateAtPoint = (point: number): number => {
+        const val = nerdamer(expr).evaluate({ [variable]: point }).text()
+        return parseFloat(val)
+      }
 
       if (direction === 'left' || direction === 'both') {
-        const leftVal = nerdamer(expr).evaluate({ [variable]: approachNum - epsilon }).text()
+        // 좌극한: 여러 epsilon으로 수렴 확인
+        const leftValues = epsilons.map(eps => evaluateAtPoint(approachNum - eps))
+        const leftConverged = leftValues.every(v => !isNaN(v))
+
         if (direction === 'left') {
-          result = leftVal
+          result = leftConverged ? leftValues[leftValues.length - 1].toString() : 'undefined'
         } else {
-          const rightVal = nerdamer(expr).evaluate({ [variable]: approachNum + epsilon }).text()
-          const leftNum = parseFloat(leftVal)
-          const rightNum = parseFloat(rightVal)
-          const converged = !isNaN(leftNum) && !isNaN(rightNum) && Math.abs(leftNum - rightNum) < epsilon * 10
-          result = converged ? leftVal : `좌극한: ${leftVal}, 우극한: ${rightVal}`
+          // 우극한도 계산
+          const rightValues = epsilons.map(eps => evaluateAtPoint(approachNum + eps))
+          const rightConverged = rightValues.every(v => !isNaN(v))
+
+          const leftLimit = leftConverged ? leftValues[leftValues.length - 1] : NaN
+          const rightLimit = rightConverged ? rightValues[rightValues.length - 1] : NaN
+
+          // 양측 극한 비교 (상대 오차 1e-6 이내)
+          const tolerance = 1e-6
+          const converged = !isNaN(leftLimit) && !isNaN(rightLimit) &&
+            Math.abs(leftLimit - rightLimit) <= tolerance * Math.max(Math.abs(leftLimit), Math.abs(rightLimit), 1)
+
+          if (converged) {
+            // 수렴: 평균값 반환 (더 정확)
+            const avgLimit = (leftLimit + rightLimit) / 2
+            // 깔끔한 정수 체크
+            if (Math.abs(avgLimit - Math.round(avgLimit)) < tolerance) {
+              result = Math.round(avgLimit).toString()
+            } else {
+              result = avgLimit.toPrecision(10).replace(/\.?0+$/, '')
+            }
+          } else {
+            result = `좌극한: ${leftLimit}, 우극한: ${rightLimit}`
+          }
         }
       } else {
-        result = nerdamer(expr).evaluate({ [variable]: approachNum + epsilon }).text()
+        // 우극한만
+        const rightValues = epsilons.map(eps => evaluateAtPoint(approachNum + eps))
+        result = rightValues[rightValues.length - 1].toString()
       }
     }
 
@@ -424,7 +454,7 @@ export function limit(
         `함수: f(${variable}) = ${expr}`,
         `극한: lim(${variable} → ${approach}) f(${variable}) = ${result}`
       ],
-      engine: 'nerdamer (approximation)'
+      engine: 'nerdamer (high-precision approximation)'
     }
   } catch (error) {
     return {

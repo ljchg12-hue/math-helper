@@ -1,6 +1,6 @@
 {
   "name": "math-helper-gui",
-  "version": "1.0.30",
+  "version": "1.0.31",
   "description": "스마트한 수학 계산기 - 자동 모드 전환, 결과 요약, 카테고리 필터링",
   "author": {
     "name": "Math Helper Team",

@@ -67,9 +67,10 @@ export default function ProblemGenerator() {
     if (category === 'linear_equation') {
       if (difficulty === 'easy') {
         const a = rand(2, 5)
+        // ✅ FIX v1.0.31: 정수 해가 나오도록 x를 먼저 결정
+        const x = rand(1, 10)
         const b = rand(1, 10)
-        const c = rand(1, 20)
-        const x = (c - b) / a
+        const c = a * x + b  // c = ax + b이므로 x = (c-b)/a는 항상 정수
         return {
           question: `${a}x + ${b} = ${c}`,
           solution: `x = ${x}`,
@@ -83,7 +84,9 @@ export default function ProblemGenerator() {
       } else if (difficulty === 'medium') {
         const a = rand(2, 5)
         const b = rand(1, 10)
-        const c = rand(2, 5)
+        // ✅ BUG FIX v1.0.31: a ≠ c 보장 (0으로 나눔 방지)
+        let c = rand(2, 5)
+        while (c === a) c = rand(2, 5)
         const d = rand(1, 10)
         const x = (d - b) / (a - c)
         return {
@@ -98,16 +101,18 @@ export default function ProblemGenerator() {
           difficulty: 'medium'
         }
       } else {
+        // ✅ FIX v1.0.31: 정수 해가 나오도록 개선
         const a = rand(2, 5)
+        const x = rand(-5, 10)  // 음수도 포함하여 난이도 up
         const b = rand(1, 10)
-        const c = rand(1, 20)
+        const c = a * (x + b)  // c = a(x+b)이므로 x는 항상 정수
         return {
           question: `${a}(x + ${b}) = ${c}`,
-          solution: `x = ${(c / a - b).toFixed(2)}`,
+          solution: `x = ${x}`,
           steps: [
             `${a}(x + ${b}) = ${c}`,
             `x + ${b} = ${c / a}`,
-            `x = ${(c / a - b).toFixed(2)}`,
+            `x = ${c / a} - ${b} = ${x}`,
           ],
           difficulty: 'hard'
         }
@@ -115,7 +120,9 @@ export default function ProblemGenerator() {
     } else if (category === 'quadratic_equation') {
       if (difficulty === 'easy') {
         const r1 = rand(1, 5)
-        const r2 = rand(1, 5)
+        // ✅ FIX v1.0.31: 중복근 방지 (r1 ≠ r2)
+        let r2 = rand(1, 5)
+        while (r2 === r1) r2 = rand(1, 5)
         const b = -(r1 + r2)
         const c = r1 * r2
         return {
@@ -295,14 +302,27 @@ export default function ProblemGenerator() {
     } else if (category === 'simultaneous_equations') {
       if (difficulty === 'hard') {
         // ✅ Phase 2: Hard - 3원 연립방정식
+        // ✅ FIX v1.0.31: 행렬식 ≠ 0 보장 (유일해 존재)
         const x = rand(1, 3)
         const y = rand(1, 3)
         const z = rand(1, 3)
-        const a1 = rand(1, 2), b1 = rand(1, 2), c1 = rand(1, 2)
+
+        // 행렬식이 0이 아닐 때까지 계수 생성
+        let a1: number, b1: number, c1: number
+        let a2: number, b2: number, c2: number
+        let a3: number, b3: number, c3: number
+        let det: number
+
+        do {
+          a1 = rand(1, 3); b1 = rand(1, 3); c1 = rand(1, 3)
+          a2 = rand(1, 3); b2 = rand(1, 3); c2 = rand(1, 3)
+          a3 = rand(1, 3); b3 = rand(1, 3); c3 = rand(1, 3)
+          // 3x3 행렬식 계산
+          det = a1 * (b2 * c3 - c2 * b3) - b1 * (a2 * c3 - c2 * a3) + c1 * (a2 * b3 - b2 * a3)
+        } while (det === 0)
+
         const d1 = a1 * x + b1 * y + c1 * z
-        const a2 = rand(1, 2), b2 = rand(1, 2), c2 = rand(1, 2)
         const d2 = a2 * x + b2 * y + c2 * z
-        const a3 = rand(1, 2), b3 = rand(1, 2), c3 = rand(1, 2)
         const d3 = a3 * x + b3 * y + c3 * z
         return {
           question: `${a1}x + ${b1}y + ${c1}z = ${d1}\n${a2}x + ${b2}y + ${c2}z = ${d2}\n${a3}x + ${b3}y + ${c3}z = ${d3}`,
@@ -317,13 +337,20 @@ export default function ProblemGenerator() {
           difficulty: 'hard'
         }
       }
+      // ✅ FIX v1.0.31: 2원 연립방정식도 행렬식 ≠ 0 보장
       const x = rand(1, 5)
       const y = rand(1, 5)
-      const a = rand(1, 3)
-      const b = rand(1, 3)
+      let a: number, b: number, d: number, e: number, det2x2: number
+
+      do {
+        a = rand(1, 3)
+        b = rand(1, 3)
+        d = rand(1, 3)
+        e = rand(1, 3)
+        det2x2 = a * e - b * d  // 2x2 행렬식
+      } while (det2x2 === 0)
+
       const c = a * x + b * y
-      const d = rand(1, 3)
-      const e = rand(1, 3)
       const f = d * x + e * y
       return {
         question: `${a}x + ${b}y = ${c}\n${d}x + ${e}y = ${f}`,
@@ -678,18 +705,18 @@ export default function ProblemGenerator() {
         const a = rand(2, 5)
         const b = rand(1, 3)
         const n = rand(2, 4)
-        const innerDerivative = a
-        const outerDerivative = n * b
+        // ✅ FIX v1.0.31: 올바른 계수 계산 (n * a)
+        const coefficient = n * a  // f'(x) = n*a*(ax+b)^(n-1)
         return {
           question: `f(x) = (${a}x + ${b})^${n}을 미분하시오`,
-          solution: `f'(x) = ${outerDerivative * a}(${a}x + ${b})^${n - 1}`,
+          solution: `f'(x) = ${coefficient}(${a}x + ${b})^${n - 1}`,
           steps: [
             `합성함수 미분: d/dx[g(f(x))] = g'(f(x))·f'(x)`,
             `외부함수: u^${n}, 내부함수: ${a}x + ${b}`,
             `외부함수 미분: ${n}u^${n - 1}`,
             `내부함수 미분: ${a}`,
             `f'(x) = ${n}(${a}x + ${b})^${n - 1} × ${a}`,
-            `= ${outerDerivative * a}(${a}x + ${b})^${n - 1}`,
+            `= ${coefficient}(${a}x + ${b})^${n - 1}`,
           ],
           difficulty: 'hard'
         }
